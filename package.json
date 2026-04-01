@@ -1,0 +1,51 @@
+{
+	"name": "@phake/mcp",
+	"version": "0.0.1",
+	"type": "module",
+	"main": "./dist/index.js",
+	"types": "./dist/index.d.ts",
+	"files": [
+		"dist"
+	],
+	"exports": {
+		".": {
+			"types": "./dist/index.d.ts",
+			"default": "./dist/index.js"
+		},
+		"./runtime/node": {
+			"types": "./dist/runtime/node/index.d.ts",
+			"default": "./dist/runtime/node/index.js"
+		},
+		"./runtime/worker": {
+			"types": "./dist/runtime/worker/index.d.ts",
+			"default": "./dist/runtime/worker/index.js"
+		}
+	},
+	"scripts": {
+		"build": "bun build src/index.ts src/runtime/node/index.ts src/runtime/worker/index.ts --outdir dist --target bun --splitting && tsc -p tsconfig.build.json",
+		"typecheck": "tsc --noEmit",
+		"version:major": "bun scripts/version.ts major",
+		"version:minor": "bun scripts/version.ts minor",
+		"version:patch": "bun scripts/version.ts patch"
+	},
+	"dependencies": {
+		"@modelcontextprotocol/sdk": "^1.29.0",
+		"itty-router": "^5.0.23",
+		"jose": "^6.2.2",
+		"oauth4webapi": "^3.8.5",
+		"zod": "^4.3.6",
+		"zod-to-json-schema": "^3.25.2"
+	},
+	"optionalDependencies": {
+		"@hono/node-server": "^1.19.12",
+		"better-sqlite3": "^12.8.0",
+		"drizzle-orm": "^0.45.2",
+		"hono": "^4.12.9"
+	},
+	"devDependencies": {
+		"@cloudflare/workers-types": "^4.20260401.1",
+		"@types/better-sqlite3": "^7.6.13",
+		"bun-types": "^1.3.11",
+		"typescript": "^6.0.2"
+	}
+}

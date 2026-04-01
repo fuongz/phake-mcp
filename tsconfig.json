@@ -1,0 +1,26 @@
+{
+	"compilerOptions": {
+		"target": "ES2022",
+		"lib": ["ES2022"],
+		"module": "ESNext",
+		"moduleResolution": "bundler",
+		"allowImportingTsExtensions": true,
+		"moduleDetection": "force",
+		"noEmit": true,
+		"composite": false,
+		"strict": true,
+		"skipLibCheck": true,
+		"jsx": "react-jsx",
+		"allowSyntheticDefaultImports": true,
+		"forceConsistentCasingInFileNames": true,
+		"allowJs": true,
+		"types": ["@cloudflare/workers-types", "bun-types"],
+		"paths": {
+			"@phake/mcp": ["./src/index.ts"],
+			"@phake/mcp/runtime/*": ["./src/runtime/*"],
+			"@phake/mcp/*": ["./src/*"]
+		}
+	},
+	"include": ["src/**/*", "scripts/**/*"],
+	"exclude": ["node_modules", "dist"]
+}
