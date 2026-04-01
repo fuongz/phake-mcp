@@ -1,17 +1,19 @@
 # @phake/mcp
 
+[![npm](https://img.shields.io/npm/v/@phake/mcp)](https://www.npmjs.com/package/@phake/mcp)
+
 A TypeScript library for building MCP (Model Context Protocol) servers, designed to run on Cloudflare Workers and Node.js.
 
 ## Features
 
-- **Multi-runtime support** — Deploy to Cloudflare Workers (itty-router) or Node.js (Hono)
-- **OAuth 2.0 authentication** — Full PKCE flow with dynamic token resolution and proactive refresh
-- **5 auth strategies** — `oauth`, `bearer`, `api_key`, `custom`, `none`
-- **Tool registration** — Define and register MCP tools with Zod input/output schemas
-- **Session & token management** — Persistent storage with LRU eviction and TTL
-- **Multiple storage backends** — Cloudflare KV, SQLite, file-based, and in-memory
-- **CORS support** — Configurable CORS headers
-- **Type-safe** — Full TypeScript support with Zod validation
+- **Multi-runtime support** - Deploy to Cloudflare Workers (itty-router) or Node.js (Hono)
+- **OAuth 2.0 authentication** - Full PKCE flow with dynamic token resolution and proactive refresh
+- **5 auth strategies** - `oauth`, `bearer`, `api_key`, `custom`, `none`
+- **Tool registration** - Define and register MCP tools with Zod input/output schemas
+- **Session & token management** - Persistent storage with LRU eviction and TTL
+- **Multiple storage backends** - Cloudflare KV, SQLite, file-based, and in-memory
+- **CORS support** - Configurable CORS headers
+- **Type-safe** - Full TypeScript support with Zod validation
 
 ## Installation
 
@@ -75,11 +77,11 @@ Creates an MCP server instance.
 
 | Strategy | Description | Config Env Vars |
 |----------|-------------|-----------------|
-| `oauth` | Full OAuth 2.1 PKCE flow with RS token → provider token mapping | `OAUTH_CLIENT_ID`, `OAUTH_CLIENT_SECRET`, `OAUTH_SCOPES`, `OAUTH_REDIRECT_URI`, `PROVIDER_CLIENT_ID`, `PROVIDER_CLIENT_SECRET`, `PROVIDER_ACCOUNTS_URL` |
+| `oauth` | Full OAuth 2.1 PKCE flow with RS token -> provider token mapping | `OAUTH_CLIENT_ID`, `OAUTH_CLIENT_SECRET`, `OAUTH_SCOPES`, `OAUTH_REDIRECT_URI`, `PROVIDER_CLIENT_ID`, `PROVIDER_CLIENT_SECRET`, `PROVIDER_ACCOUNTS_URL` |
 | `bearer` | Static Bearer token | `BEARER_TOKEN` |
 | `api_key` | Static API key in custom header (default: `x-api-key`) | `API_KEY`, `API_KEY_HEADER` |
 | `custom` | Arbitrary custom headers | `CUSTOM_HEADERS` |
-| `none` | No authentication required | — |
+| `none` | No authentication required | - |
 
 ## Storage Backends
 
@@ -91,6 +93,98 @@ Creates an MCP server instance.
 | `KvSessionStore` | Sessions | Cloudflare KV + memory fallback, encryption, API-key indexing |
 | `FileTokenStore` | RS token mappings | JSON file persistence, AES-256-GCM encryption, secure permissions (0600) |
 | `SqliteSessionStore` | Sessions | SQLite via better-sqlite3 + Drizzle ORM, WAL mode, atomic transactions |
+
+## Creating Tools
+
+Use `defineTool` to create a type-safe tool definition, then pass it to `tools` when creating the server.
+
+```typescript
+import { z } from "zod";
+import { defineTool } from "@phake/mcp";
+
+const greetTool = defineTool({
+  name: "greet",
+  title: "Greet User",
+  description: "Returns a greeting for the given name",
+  inputSchema: z.object({
+    name: z.string().describe("Name to greet"),
+  }),
+  outputSchema: {
+    message: z.string().describe("The greeting message"),
+  },
+  annotations: {
+    readOnlyHint: true,
+    destructiveHint: false,
+    idempotentHint: true,
+  },
+  handler: async (args, context) => {
+    const message = `Hello, ${args.name}!`;
+    return {
+      content: [{ type: "text", text: message }],
+      structuredContent: { message },
+    };
+  },
+});
+```
+
+### Authenticated Tools
+
+Set `requiresAuth: true` to have the dispatcher automatically reject calls when no token is present. Use `context.resolvedHeaders` to call external APIs.
+
+```typescript
+import { defineTool } from "@phake/mcp";
+import { z } from "zod";
+
+const profileTool = defineTool({
+  name: "get_profile",
+  description: "Fetch the authenticated user's profile",
+  inputSchema: z.object({}),
+  requiresAuth: true,
+  handler: async (_args, context) => {
+    const response = await fetch("https://api.example.com/me", {
+      headers: context.resolvedHeaders,
+    });
+    const data = await response.json();
+    return {
+      content: [{ type: "text", text: JSON.stringify(data) }],
+    };
+  },
+});
+```
+
+### Registering Tools
+
+```typescript
+import { createMCPServer } from "@phake/mcp";
+
+const server = createMCPServer({
+  adapter: "worker",
+  tools: [greetTool, profileTool],
+});
+```
+
+### Tool Handler Reference
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `name` | `string` | Yes | Unique tool name |
+| `description` | `string` | Yes | Description shown to the LLM |
+| `inputSchema` | `ZodObject` | Yes | Zod schema for input validation |
+| `outputSchema` | `ZodRawShape` | No | Zod schema for structured output |
+| `handler` | `function` | Yes | `(args, context) => Promise<ToolResult>` |
+| `requiresAuth` | `boolean` | No | Reject calls without a provider token |
+| `title` | `string` | No | Human-readable display title |
+| `annotations` | `object` | No | MCP hints (`readOnlyHint`, `destructiveHint`, etc.) |
+
+The `context` object provides:
+
+| Property | Description |
+|----------|-------------|
+| `sessionId` | Current MCP session ID |
+| `providerToken` | Access token for external API calls |
+| `resolvedHeaders` | Ready-to-use auth headers for `fetch` |
+| `authStrategy` | Active auth strategy |
+| `signal` | `AbortSignal` for cancellation |
 
 ## Built-in Tools
 
@@ -170,13 +264,13 @@ src/
 
 ## Dependencies
 
-- `@modelcontextprotocol/sdk` — MCP protocol implementation
-- `zod` — Schema validation
-- `jose` — JWT and JWS/JWE
-- `oauth4webapi` — OAuth 2.0 for Web API
-- `itty-router` — Lightweight router (Workers)
-- `hono` / `@hono/node-server` — Node.js HTTP framework (optional)
-- `drizzle-orm` / `better-sqlite3` — Database layer (optional)
+- `@modelcontextprotocol/sdk` - MCP protocol implementation
+- `zod` - Schema validation
+- `jose` - JWT and JWS/JWE
+- `oauth4webapi` - OAuth 2.0 for Web API
+- `itty-router` - Lightweight router (Workers)
+- `hono` / `@hono/node-server` - Node.js HTTP framework (optional)
+- `drizzle-orm` / `better-sqlite3` - Database layer (optional)
 
 ## Inspired By
 
@@ -184,4 +278,4 @@ This project was inspired by [streamable-mcp-server-template](https://github.com
 
 ## License
 
-This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
