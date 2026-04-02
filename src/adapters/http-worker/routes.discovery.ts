@@ -38,4 +38,15 @@ export function attachDiscoveryRoutes(
 			return jsonResponse(metadata);
 		},
 	);
+
+	// RFC 9470: path-based discovery — Claude tries /.well-known/oauth-protected-resource/{path} first
+	router.get(
+		"/.well-known/oauth-protected-resource/*",
+		async (request: Request) => {
+			const here = new URL(request.url);
+			const sid = here.searchParams.get("sid") ?? undefined;
+			const metadata = protectedResourceMetadata(here, sid);
+			return jsonResponse(metadata);
+		},
+	);
 }

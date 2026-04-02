@@ -109,7 +109,7 @@ export function buildUnauthorizedChallenge(args: {
 	return {
 		status: 401,
 		headers: {
-			"WWW-Authenticate": `Bearer realm="MCP", authorization_uri="${resourceMd}"`,
+			"WWW-Authenticate": `Bearer realm="MCP", resource_metadata="${resourceMd}"`,
 			"Mcp-Session-Id": args.sid,
 		},
 		body: {
