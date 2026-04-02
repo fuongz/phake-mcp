@@ -1,8 +1,8 @@
 # @phake/mcp
 
-[![npm](https://img.shields.io/npm/v/@phake/mcp)](https://www.npmjs.com/package/@phake/mcp)
-
 A TypeScript library for building MCP (Model Context Protocol) servers, designed to run on Cloudflare Workers and Node.js.
+
+[![npm](https://img.shields.io/npm/v/@phake/mcp?style=flat-square)](https://www.npmjs.com/package/@phake/mcp)
 
 ## Features
 
@@ -35,9 +35,7 @@ const server = createMCPServer({
   ],
 });
 
-export default {
-  fetch: (request: Request, env: unknown) => server.fetch(request, env),
-};
+export default server;
 ```
 
 ### Node.js

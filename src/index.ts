@@ -4,9 +4,6 @@ export * from "./adapters/http-worker/index.js";
 // MCP Server factory
 export * from "./mcp-server.js";
 
-// Runtime exports
-export * from "./runtime/node/index.js";
-
 // Auth
 export * from "./shared/auth/strategy.js";
 export { ResolvedAuth } from "./shared/auth/strategy.js";
