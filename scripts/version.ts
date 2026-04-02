@@ -8,7 +8,6 @@
  *   bun scripts/version.ts patch   # 1.0.0 → 1.0.1
  */
 
-import { execSync } from "node:child_process";
 import { readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 
@@ -56,13 +55,3 @@ pkg.version = nextVersion;
 writeFileSync(pkgPath, `${JSON.stringify(pkg, null, "\t")}\n`);
 
 console.log(`${currentVersion} → ${nextVersion}`);
-
-// Stage package.json, commit, and tag
-execSync(`git add package.json`, { stdio: "inherit" });
-execSync(`git commit -m "chore: release v${nextVersion}"`, {
-	stdio: "inherit",
-});
-execSync(`git tag v${nextVersion}`, { stdio: "inherit" });
-
-console.log(`\nCreated tag v${nextVersion}`);
-console.log(`Push with: git push origin main --tags`);

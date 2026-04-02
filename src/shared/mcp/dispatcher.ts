@@ -4,7 +4,6 @@
  */
 
 import { z } from "zod";
-import { zodToJsonSchema } from "zod-to-json-schema";
 import { buildCapabilities } from "../../runtime/node/capabilities.js";
 import { serverMetadata } from "../../shared/config/metadata.js";
 import { executeSharedTool, sharedTools } from "../tools/registry.js";
@@ -122,9 +121,9 @@ async function handleToolsList(
 	const tools = (ctx.tools ?? sharedTools).map((tool) => ({
 		name: tool.name,
 		description: tool.description,
-		inputSchema: zodToJsonSchema(tool.inputSchema as any),
+		inputSchema: z.toJSONSchema(tool.inputSchema as any),
 		...(tool.outputSchema && {
-			outputSchema: zodToJsonSchema(z.object(tool.outputSchema) as any),
+			outputSchema: z.toJSONSchema(z.object(tool.outputSchema) as any),
 		}),
 		...(tool.annotations && { annotations: tool.annotations }),
 	}));

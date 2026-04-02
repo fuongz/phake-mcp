@@ -14,7 +14,7 @@
 		"allowSyntheticDefaultImports": true,
 		"forceConsistentCasingInFileNames": true,
 		"allowJs": true,
-		"types": ["@cloudflare/workers-types", "bun-types"],
+		"types": ["bun-types"],
 		"paths": {
 			"@phake/mcp": ["./src/index.ts"],
 			"@phake/mcp/runtime/*": ["./src/runtime/*"],

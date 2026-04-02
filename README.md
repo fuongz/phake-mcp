@@ -1,19 +1,33 @@
 # @phake/mcp
 
-A TypeScript library for building MCP (Model Context Protocol) servers, designed to run on Cloudflare Workers and Node.js.
+A TypeScript library for building [MCP (Model Context Protocol)](https://modelcontextprotocol.io) servers on Cloudflare Workers.
 
 [![npm](https://img.shields.io/npm/v/@phake/mcp?style=flat-square)](https://www.npmjs.com/package/@phake/mcp)
+[![license](https://img.shields.io/npm/l/@phake/mcp?style=flat-square)](LICENSE)
 
-## Features
+---
 
-- **Multi-runtime support** - Deploy to Cloudflare Workers (itty-router) or Node.js (Hono)
-- **OAuth 2.0 authentication** - Full PKCE flow with dynamic token resolution and proactive refresh
-- **5 auth strategies** - `oauth`, `bearer`, `api_key`, `custom`, `none`
-- **Tool registration** - Define and register MCP tools with Zod input/output schemas
-- **Session & token management** - Persistent storage with LRU eviction and TTL
-- **Multiple storage backends** - Cloudflare KV, SQLite, file-based, and in-memory
-- **CORS support** - Configurable CORS headers
-- **Type-safe** - Full TypeScript support with Zod validation
+- [Requirements](#requirements)
+- [Installation](#installation)
+- [Getting Started](#getting-started)
+- [Usage](#usage)
+  - [Defining Tools](#defining-tools)
+  - [Authenticated Tools](#authenticated-tools)
+  - [Authentication Strategies](#authentication-strategies)
+  - [Storage Backends](#storage-backends)
+- [API Reference](#api-reference)
+- [Endpoints](#endpoints)
+- [Configuration](#configuration)
+- [Contributing](#contributing)
+- [License](#license)
+
+---
+
+## Requirements
+
+- [Bun](https://bun.sh) or Node.js 20+
+- [Wrangler](https://developers.cloudflare.com/workers/wrangler/) CLI
+- A Cloudflare account with Workers and KV access
 
 ## Installation
 
@@ -21,9 +35,65 @@ A TypeScript library for building MCP (Model Context Protocol) servers, designed
 bun add @phake/mcp
 ```
 
-## Quick Start
+## Getting Started
 
-### Cloudflare Workers
+### 1. Create the KV namespace
+
+```bash
+wrangler kv namespace create TOKENS
+```
+
+### 2. Bind it in your Wrangler config
+
+Use the namespace ID printed in the previous step.
+
+`wrangler.toml`
+```toml
+[[kv_namespaces]]
+binding = "TOKENS"
+id = "<your-kv-namespace-id>"
+```
+
+`wrangler.jsonc`
+```jsonc
+{
+  "kv_namespaces": [
+    {
+      "binding": "TOKENS",
+      "id": "<your-kv-namespace-id>"
+    }
+  ]
+}
+```
+
+### 3. Generate an encryption key
+
+Tokens at rest are encrypted with AES-256-GCM. Generate a 32-byte key:
+
+```bash
+# OpenSSL
+openssl rand -base64 32 | tr '+/' '-_' | tr -d '='
+
+# Node.js
+node -e "const {randomBytes}=require('crypto'); console.log(randomBytes(32).toString('base64url'))"
+```
+
+### 4. Set the encryption key
+
+**Production** - add as a Wrangler secret:
+
+```bash
+wrangler secret put RS_TOKENS_ENC_KEY
+# paste the generated key when prompted
+```
+
+**Local development** - add to `.dev.vars`:
+
+```ini
+RS_TOKENS_ENC_KEY=<your-generated-key>
+```
+
+### 5. Create your Worker
 
 ```typescript
 import { createMCPServer } from "@phake/mcp";
@@ -38,63 +108,11 @@ const server = createMCPServer({
 export default server;
 ```
 
-### Node.js
+## Usage
 
-```typescript
-import { createHttpApp, createAuthApp } from "@phake/mcp/runtime/node";
+### Defining Tools
 
-const { app, sessionStore } = createHttpApp({
-  tools: [
-    // your tool definitions
-  ],
-});
-
-const authApp = createAuthApp({ sessionStore });
-```
-
-## API
-
-### `createMCPServer(options)`
-
-Creates an MCP server instance.
-
-| Option | Type | Description |
-|--------|------|-------------|
-| `adapter` | `"worker" \| "node"` | Runtime adapter |
-| `tools` | `SharedToolDefinition[]` | Array of tool definitions to register |
-
-### Exports
-
-| Module | Path |
-|--------|------|
-| Core | `@phake/mcp` |
-| Node runtime | `@phake/mcp/runtime/node` |
-| Worker runtime | `@phake/mcp/runtime/worker` |
-
-## Authentication Strategies
-
-| Strategy | Description | Config Env Vars |
-|----------|-------------|-----------------|
-| `oauth` | Full OAuth 2.1 PKCE flow with RS token -> provider token mapping | `OAUTH_CLIENT_ID`, `OAUTH_CLIENT_SECRET`, `OAUTH_SCOPES`, `OAUTH_REDIRECT_URI`, `PROVIDER_CLIENT_ID`, `PROVIDER_CLIENT_SECRET`, `PROVIDER_ACCOUNTS_URL` |
-| `bearer` | Static Bearer token | `BEARER_TOKEN` |
-| `api_key` | Static API key in custom header (default: `x-api-key`) | `API_KEY`, `API_KEY_HEADER` |
-| `custom` | Arbitrary custom headers | `CUSTOM_HEADERS` |
-| `none` | No authentication required | - |
-
-## Storage Backends
-
-| Backend | Stores | Key Features |
-|---------|--------|--------------|
-| `MemoryTokenStore` | Tokens, transactions, codes | TTL expiration, size limits (10K tokens), LRU eviction |
-| `MemorySessionStore` | Sessions | TTL (24h), size limit (10K), per-API-key limits (5) |
-| `KvTokenStore` | Tokens, transactions, codes | Cloudflare KV + memory fallback, AES-256-GCM encryption |
-| `KvSessionStore` | Sessions | Cloudflare KV + memory fallback, encryption, API-key indexing |
-| `FileTokenStore` | RS token mappings | JSON file persistence, AES-256-GCM encryption, secure permissions (0600) |
-| `SqliteSessionStore` | Sessions | SQLite via better-sqlite3 + Drizzle ORM, WAL mode, atomic transactions |
-
-## Creating Tools
-
-Use `defineTool` to create a type-safe tool definition, then pass it to `tools` when creating the server.
+Use `defineTool` to create a type-safe tool, then pass it to `createMCPServer`.
 
 ```typescript
 import { z } from "zod";
@@ -125,14 +143,24 @@ const greetTool = defineTool({
 });
 ```
 
+**Tool definition fields:**
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `name` | `string` | Yes | Unique tool identifier |
+| `description` | `string` | Yes | Description shown to the LLM |
+| `inputSchema` | `ZodObject` | Yes | Zod schema for input validation |
+| `outputSchema` | `ZodRawShape` | No | Zod schema for structured output |
+| `handler` | `function` | Yes | `(args, context) => Promise<ToolResult>` |
+| `requiresAuth` | `boolean` | No | Reject calls without a provider token |
+| `title` | `string` | No | Human-readable display title |
+| `annotations` | `object` | No | MCP hints (`readOnlyHint`, `destructiveHint`, etc.) |
+
 ### Authenticated Tools
 
-Set `requiresAuth: true` to have the dispatcher automatically reject calls when no token is present. Use `context.resolvedHeaders` to call external APIs.
+Set `requiresAuth: true` to have the dispatcher automatically reject unauthenticated calls. Use `context.resolvedHeaders` to forward auth to external APIs.
 
 ```typescript
-import { defineTool } from "@phake/mcp";
-import { z } from "zod";
-
 const profileTool = defineTool({
   name: "get_profile",
   description: "Fetch the authenticated user's profile",
@@ -150,31 +178,7 @@ const profileTool = defineTool({
 });
 ```
 
-### Registering Tools
-
-```typescript
-import { createMCPServer } from "@phake/mcp";
-
-const server = createMCPServer({
-  adapter: "worker",
-  tools: [greetTool, profileTool],
-});
-```
-
-### Tool Handler Reference
-
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `name` | `string` | Yes | Unique tool name |
-| `description` | `string` | Yes | Description shown to the LLM |
-| `inputSchema` | `ZodObject` | Yes | Zod schema for input validation |
-| `outputSchema` | `ZodRawShape` | No | Zod schema for structured output |
-| `handler` | `function` | Yes | `(args, context) => Promise<ToolResult>` |
-| `requiresAuth` | `boolean` | No | Reject calls without a provider token |
-| `title` | `string` | No | Human-readable display title |
-| `annotations` | `object` | No | MCP hints (`readOnlyHint`, `destructiveHint`, etc.) |
-
-The `context` object provides:
+**Available context properties:**
 
 | Property | Description |
 |----------|-------------|
@@ -184,54 +188,70 @@ The `context` object provides:
 | `authStrategy` | Active auth strategy |
 | `signal` | `AbortSignal` for cancellation |
 
-## Built-in Tools
+### Authentication Strategies
+
+Set `AUTH_STRATEGY` in your environment (or let it be inferred from which keys are present):
+
+| Strategy | Description | Required env vars |
+|----------|-------------|-------------------|
+| `oauth` | Full OAuth 2.1 PKCE flow with RS token => provider token mapping | `OAUTH_CLIENT_ID`, `OAUTH_CLIENT_SECRET`, `OAUTH_SCOPES`, `OAUTH_REDIRECT_URI`, `PROVIDER_CLIENT_ID`, `PROVIDER_CLIENT_SECRET`, `PROVIDER_ACCOUNTS_URL` |
+| `bearer` | Static Bearer token | `BEARER_TOKEN` |
+| `api_key` | Static API key via header (default: `x-api-key`) | `API_KEY`, `API_KEY_HEADER` |
+| `custom` | Arbitrary custom request headers | `CUSTOM_HEADERS` |
+| `none` | No authentication | - |
+
+### Storage Backends
+
+| Backend | Use case | Notes |
+|---------|----------|-------|
+| `KvTokenStore` | Tokens, transactions, codes | Cloudflare KV + memory fallback, AES-256-GCM encryption |
+| `KvSessionStore` | Sessions | Cloudflare KV + memory fallback, encryption, API-key indexing |
+| `MemoryTokenStore` | Tokens, transactions, codes | TTL expiration, 10K token limit, LRU eviction |
+| `MemorySessionStore` | Sessions | TTL (24h), 10K limit, per-API-key limit (5) |
+| `FileTokenStore` | RS token mappings | File persistence, AES-256-GCM - **experimental** |
+| `SqliteSessionStore` | Sessions | SQLite + Drizzle ORM, WAL mode - **experimental** |
+
+## API Reference
+
+### `createMCPServer(options)`
+
+Creates an MCP server instance.
+
+```typescript
+import { createMCPServer } from "@phake/mcp";
+
+const server = createMCPServer({
+  adapter: "worker",
+  tools: [greetTool, profileTool],
+});
+
+export default server;
+```
+
+| Option | Type | Description |
+|--------|------|-------------|
+| `adapter` | `"worker"` | Runtime adapter |
+| `tools` | `SharedToolDefinition[]` | Tools to register |
+
+### Built-in Tools
 
 | Tool | Input | Output | Description |
 |------|-------|--------|-------------|
-| `echo` | `{ message, uppercase? }` | `{ echoed, length }` | Echoes back a message, optionally uppercased |
-| `health` | `{ verbose? }` | `{ status, timestamp, runtime, uptime? }` | Reports server health, uptime, runtime detection |
+| `echo` | `{ message, uppercase? }` | `{ echoed, length }` | Echoes back a message |
+| `health` | `{ verbose? }` | `{ status, timestamp, runtime, uptime? }` | Reports server health |
 
-## Project Structure
+### Package Exports
 
-```
-src/
-├── adapters/
-│   ├── http-node/           # Node.js adapter (Hono)
-│   │   ├── http/            # MCP server app, routes, middleware
-│   │   ├── routes.discovery.ts
-│   │   ├── routes.oauth.ts
-│   │   └── middleware.security.ts
-│   └── http-worker/         # Cloudflare Workers adapter (itty-router)
-│       ├── index.ts
-│       ├── mcp.handler.ts
-│       ├── routes.discovery.ts
-│       ├── routes.oauth.ts
-│       └── security.ts
-├── runtime/
-│   └── node/
-│       ├── capabilities.ts
-│       ├── context.ts
-│       ├── mcp.ts
-│       └── storage/
-│           ├── file.ts
-│           └── sqlite.ts
-├── shared/
-│   ├── auth/                # Authentication strategies
-│   ├── config/              # Environment configuration (40+ fields)
-│   ├── crypto/              # AES-256-GCM utilities
-│   ├── http/                # CORS, JSON-RPC responses
-│   ├── mcp/                 # Protocol dispatcher, security, server internals
-│   ├── oauth/               # Full OAuth 2.0 implementation (PKCE, CIMD, discovery)
-│   ├── services/            # HTTP client
-│   ├── storage/             # Token/session store interfaces and implementations
-│   ├── tools/               # Tool definitions, registry, execution
-│   ├── types/               # Shared type definitions
-│   └── utils/               # Base64, cancellation, logger, pagination, etc.
-├── mcp-server.ts            # Server factory
-└── index.ts                 # Main entry point
-```
+| Export | Path |
+|--------|------|
+| Core | `@phake/mcp` |
+| Worker runtime | `@phake/mcp/runtime/worker` |
 
-## MCP Endpoints
+> **Node.js runtime** (`@phake/mcp/runtime/node`) is available but experimental and untested.
+
+## Endpoints
+
+### MCP
 
 | Method | Path | Description |
 |--------|------|-------------|
@@ -240,7 +260,7 @@ src/
 | `DELETE` | `/mcp` | Session termination |
 | `GET` | `/health` | Health check |
 
-## OAuth Endpoints
+### OAuth
 
 | Path | Description |
 |------|-------------|
@@ -253,27 +273,57 @@ src/
 | `/revoke` | Token revocation |
 | `/register` | Dynamic client registration |
 
-## Scripts
+## Configuration
 
-| Command | Description |
-|---------|-------------|
-| `bun run build` | Build with Bun |
-| `bun run typecheck` | Run TypeScript type checking |
+All configuration is read from environment variables / Wrangler bindings.
 
-## Dependencies
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `TOKENS` | Yes | Cloudflare KV namespace binding for token/session storage |
+| `RS_TOKENS_ENC_KEY` | Yes | Base64url-encoded 32-byte AES-256-GCM encryption key |
+| `AUTH_STRATEGY` | No | `oauth` \| `bearer` \| `api_key` \| `custom` \| `none` (inferred if unset) |
+| `OAUTH_CLIENT_ID` | OAuth only | OAuth client ID |
+| `OAUTH_CLIENT_SECRET` | OAuth only | OAuth client secret |
+| `OAUTH_SCOPES` | OAuth only | Space-separated OAuth scopes |
+| `OAUTH_REDIRECT_URI` | OAuth only | Redirect URI after authorization |
+| `API_KEY` | api_key only | Static API key value |
+| `BEARER_TOKEN` | bearer only | Static Bearer token value |
+| `BASE_URL` | No | Base URL override (for reverse proxies) |
+| `LOG_LEVEL` | No | `debug` \| `info` \| `warning` \| `error` (default: `info`) |
 
-- `@modelcontextprotocol/sdk` - MCP protocol implementation
-- `zod` - Schema validation
-- `jose` - JWT and JWS/JWE
-- `oauth4webapi` - OAuth 2.0 for Web API
-- `itty-router` - Lightweight router (Workers)
-- `hono` / `@hono/node-server` - Node.js HTTP framework (optional)
-- `drizzle-orm` / `better-sqlite3` - Database layer (optional)
+## Contributing
 
-## Inspired By
+```bash
+# Install dependencies
+bun install
 
-This project was inspired by [streamable-mcp-server-template](https://github.com/iceener/streamable-mcp-server-template).
+# Build
+bun run build
+
+# Type check
+bun run typecheck
+```
+
+**Project structure:**
+
+```
+src/
+├── adapters/
+│   └── http-worker/    # Cloudflare Workers adapter
+├── shared/
+│   ├── auth/           # Authentication strategies
+│   ├── config/         # Environment configuration
+│   ├── crypto/         # AES-256-GCM utilities
+│   ├── mcp/            # Protocol dispatcher and server internals
+│   ├── oauth/          # OAuth 2.0 (PKCE, CIMD, discovery)
+│   ├── storage/        # Token/session store interfaces and implementations
+│   └── tools/          # Tool definitions, registry, execution
+├── mcp-server.ts       # Server factory
+└── index.ts            # Package entry point
+```
+
+Inspired by [streamable-mcp-server-template](https://github.com/iceener/streamable-mcp-server-template).
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+[MIT](LICENSE)

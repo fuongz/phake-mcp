@@ -26,6 +26,10 @@ export interface MCPServer {
 
 /**
  * Create an MCP server instance.
+ * @param {MCPServerOptions} options - Configuration options
+ * @param {string} options.adapter - Runtime adapter: 'worker' (Cloudflare Workers) or 'node' (Hono/Node.js)
+ * @param {SharedToolDefinition<any>[]} [options.tools] - Array of tools to register
+ * @returns {MCPServer} - MCP server instance
  */
 export function createMCPServer(options: MCPServerOptions): MCPServer {
 	if (options.adapter === "worker") {
