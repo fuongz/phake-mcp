@@ -125,20 +125,16 @@ const greetTool = defineTool({
   inputSchema: z.object({
     name: z.string().describe("Name to greet"),
   }),
-  outputSchema: {
+  outputSchema: z.object({
     message: z.string().describe("The greeting message"),
-  },
+  }),
   annotations: {
     readOnlyHint: true,
     destructiveHint: false,
     idempotentHint: true,
   },
-  handler: async (args, context) => {
-    const message = `Hello, ${args.name}!`;
-    return {
-      content: [{ type: "text", text: message }],
-      structuredContent: { message },
-    };
+  handler: async (args) => {
+    return { message: `Hello, ${args.name}!` };
   },
 });
 ```
@@ -150,8 +146,8 @@ const greetTool = defineTool({
 | `name` | `string` | Yes | Unique tool identifier |
 | `description` | `string` | Yes | Description shown to the LLM |
 | `inputSchema` | `ZodObject` | Yes | Zod schema for input validation |
-| `outputSchema` | `ZodRawShape` | No | Zod schema for structured output |
-| `handler` | `function` | Yes | `(args, context) => Promise<ToolResult>` |
+| `outputSchema` | `ZodRawShape \| ZodObject` | No | Zod schema for structured output |
+| `handler` | `function` | Yes | `(args, context) => Promise<ToolResult \| Record<string, unknown>>` |
 | `requiresAuth` | `boolean` | No | Reject calls without a provider token |
 | `title` | `string` | No | Human-readable display title |
 | `annotations` | `object` | No | MCP hints (`readOnlyHint`, `destructiveHint`, etc.) |
@@ -170,10 +166,7 @@ const profileTool = defineTool({
     const response = await fetch("https://api.example.com/me", {
       headers: context.resolvedHeaders,
     });
-    const data = await response.json();
-    return {
-      content: [{ type: "text", text: JSON.stringify(data) }],
-    };
+    return await response.json();
   },
 });
 ```

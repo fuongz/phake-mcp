@@ -5,7 +5,7 @@
  * Uses Zod for schema validation (works in both runtimes).
  */
 
-import type { ZodObject, ZodRawShape, z } from "zod";
+import { type ZodObject, type ZodRawShape, z } from "zod";
 import type { AuthStrategy } from "../types/auth.js";
 import type { ProviderInfo } from "../types/provider.js";
 
@@ -94,7 +94,9 @@ export interface ToolContext {
  * Type guard to assert providerToken is present.
  * Use this when you know auth is required (e.g., tools with requiresAuth: true).
  */
-export function assertProviderToken(context: ToolContext): asserts context is ToolContext & { providerToken: string } {
+export function assertProviderToken(
+	context: ToolContext,
+): asserts context is ToolContext & { providerToken: string } {
 	if (!context.providerToken) {
 		throw new Error("Authentication required");
 	}
@@ -142,8 +144,8 @@ export interface SharedToolDefinition<
 	description: string;
 	/** Zod schema for input validation */
 	inputSchema: ZodObject<TShape>;
-	/** Optional Zod schema for structured output */
-	outputSchema?: ZodRawShape;
+	/** Optional Zod schema for structured output (ZodRawShape or ZodObject) */
+	outputSchema?: ZodRawShape | ZodObject<ZodRawShape>;
 	/** Tool handler function */
 	handler: (
 		args: z.infer<ZodObject<TShape>>,
@@ -173,10 +175,61 @@ export interface SharedToolDefinition<
 }
 
 /**
+ * Normalizes outputSchema to ZodRawShape.
+ * Accepts either ZodRawShape or ZodObject<ZodRawShape> and returns ZodRawShape.
+ */
+export function normalizeOutputSchema(
+	schema: ZodRawShape | ZodObject<ZodRawShape>,
+): ZodRawShape {
+	if (schema instanceof z.ZodObject) {
+		return schema.shape;
+	}
+	return schema as ZodRawShape;
+}
+
+/** Input type for defineTool — handler may return a plain object instead of ToolResult */
+type ToolDefinitionInput<TShape extends ZodRawShape> = Omit<
+	SharedToolDefinition<TShape>,
+	"handler"
+> & {
+	handler: (
+		args: z.infer<ZodObject<TShape>>,
+		context: ToolContext,
+	) => Promise<ToolResult | Record<string, unknown>>;
+};
+
+function isToolResult(value: unknown): value is ToolResult {
+	return (
+		typeof value === "object" &&
+		value !== null &&
+		"content" in value &&
+		Array.isArray((value as ToolResult).content)
+	);
+}
+
+/**
  * Helper to create a type-safe tool definition.
+ * Handlers can return either a ToolResult or a plain object — plain objects are
+ * automatically wrapped as { content: [{ type: "text", text: JSON.stringify(result) }], structuredContent: result }.
  */
 export function defineTool<TShape extends ZodRawShape>(
-	def: SharedToolDefinition<TShape>,
+	def: ToolDefinitionInput<TShape>,
 ): SharedToolDefinition<TShape> {
-	return def;
+	if (def.outputSchema) {
+		def.outputSchema = normalizeOutputSchema(def.outputSchema);
+	}
+	const originalHandler = def.handler;
+	return {
+		...def,
+		handler: async (args, context) => {
+			const result = await originalHandler(args, context);
+			if (isToolResult(result)) return result;
+			return {
+				content: [
+					{ type: "text" as const, text: JSON.stringify(result, null, 2) },
+				],
+				structuredContent: result,
+			};
+		},
+	};
 }
