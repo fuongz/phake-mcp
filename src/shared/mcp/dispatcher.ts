@@ -128,6 +128,8 @@ async function handleToolsList(
 		...(tool.annotations && { annotations: tool.annotations }),
 	}));
 
+	logger.info("[tools/list]", { message: `Exposing ${tools.length} tools`, tools: tools.map((t) => t.name) });
+
 	return { result: { tools } };
 }
 
@@ -201,15 +203,17 @@ async function handleToolsCall(
 			};
 		}
 
+		const err = error instanceof Error ? error : new Error(String(error));
 		logger.error("mcp_dispatch", {
 			message: "Tool execution failed",
 			tool: toolName,
-			error: (error as Error).message,
+			error: err.message,
+			stack: err.stack,
 		});
 		return {
 			error: {
 				code: JsonRpcErrorCode.InternalError,
-				message: `Tool execution failed: ${(error as Error).message}`,
+				message: `Tool execution failed: ${err.name}: ${err.message}`,
 			},
 		};
 	} finally {

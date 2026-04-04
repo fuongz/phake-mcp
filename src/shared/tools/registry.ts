@@ -5,7 +5,7 @@
 
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
-import type { ZodObject, ZodRawShape, ZodTypeAny } from "zod";
+import type { ZodObject, ZodRawShape, ZodType } from "zod";
 import { getCurrentAuthContext } from "../../runtime/node/context.js";
 import { toProviderInfo } from "../types/provider.js";
 import { logger } from "../utils/logger.js";
@@ -17,15 +17,15 @@ import type { SharedToolDefinition, ToolContext, ToolResult } from "./types.js";
  * Extract the shape from a Zod schema, handling ZodEffects (refined schemas).
  * ZodEffects wraps the inner schema when using .refine(), .transform(), etc.
  */
-function getSchemaShape(schema: ZodTypeAny): ZodRawShape | undefined {
+function getSchemaShape(schema: ZodType): ZodRawShape | undefined {
 	// If it's a ZodObject, return its shape directly
 	if ("shape" in schema && typeof schema.shape === "object") {
 		return (schema as ZodObject<ZodRawShape>).shape;
 	}
 
 	// If it's a ZodEffects (from .refine(), .transform(), etc.), unwrap to get inner schema
-	if ("_def" in schema && schema._def && typeof schema._def === "object") {
-		const def = schema._def as { schema?: ZodTypeAny; innerType?: ZodTypeAny };
+	if ("def" in schema && schema.def && typeof schema.def === "object") {
+		const def = schema.def as { schema?: ZodType; innerType?: ZodType };
 		// ZodEffects stores the inner schema in _def.schema
 		if (def.schema) {
 			return getSchemaShape(def.schema);
@@ -205,10 +205,16 @@ export async function executeSharedTool(
 			};
 		}
 
+		const err = error instanceof Error ? error : new Error(String(error));
+		logger.error("execute_tool", {
+			message: `Tool execution failed: ${err.message}`,
+			tool: name,
+			stack: err.stack,
+		});
+
+		const message = `${err.name}: ${err.message}${err.stack ? `\n${err.stack}` : ""}`;
 		return {
-			content: [
-				{ type: "text", text: `Tool error: ${(error as Error).message}` },
-			],
+			content: [{ type: "text", text: `Tool error: ${message}` }],
 			isError: true,
 		};
 	}
@@ -257,9 +263,10 @@ export function registerTools(
 				const ctx = authContext ?? getCurrentAuthContext();
 
 				// Convert ProviderTokens to ProviderInfo
-				const authCtx = ctx as any;
+				const authCtx = ctx;
 				const providerInfo = authCtx?.provider
-					? toProviderInfo(authCtx.provider)
+					? // biome-ignore lint/suspicious/noExplicitAny: no need
+						toProviderInfo(authCtx.provider as any)
 					: undefined;
 
 				const context: ToolContext = {
