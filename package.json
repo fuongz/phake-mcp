@@ -28,6 +28,7 @@
 	},
 	"scripts": {
 		"build": "bun build src/index.ts src/runtime/worker/index.ts --outdir dist --target browser --splitting --packages external && bun build src/runtime/node/index.ts --outdir dist/runtime/node --target bun && tsc -p tsconfig.build.json",
+		"test": "bun test src/__tests__",
 		"typecheck": "tsc --noEmit",
 		"version:major": "bun scripts/version.ts major",
 		"version:minor": "bun scripts/version.ts minor",

@@ -144,8 +144,8 @@ export interface SharedToolDefinition<
 	description: string;
 	/** Zod schema for input validation */
 	inputSchema: ZodObject<TShape>;
-	/** Optional Zod schema for structured output (ZodRawShape or ZodObject) */
-	outputSchema?: ZodRawShape | ZodObject<ZodRawShape>;
+	/** Optional Zod schema for structured output. Always stored as ZodRawShape (normalized on input). */
+	outputSchema?: ZodRawShape;
 	/** Tool handler function */
 	handler: (
 		args: z.infer<ZodObject<TShape>>,
@@ -179,7 +179,8 @@ export interface SharedToolDefinition<
  * Accepts either ZodRawShape or ZodObject<ZodRawShape> and returns ZodRawShape.
  */
 export function normalizeOutputSchema(
-	schema: ZodRawShape | ZodObject<ZodRawShape>,
+	// biome-ignore lint/suspicious/noExplicitAny: ZodObject is generic over its shape; any is required to accept all ZodObject instances
+	schema: ZodRawShape | ZodObject<any>,
 ): ZodRawShape {
 	if (schema instanceof z.ZodObject) {
 		return schema.shape;
@@ -187,15 +188,60 @@ export function normalizeOutputSchema(
 	return schema as ZodRawShape;
 }
 
-/** Input type for defineTool — handler may return a plain object instead of ToolResult */
-type ToolDefinitionInput<TShape extends ZodRawShape> = Omit<
-	SharedToolDefinition<TShape>,
-	"handler"
-> & {
+/**
+ * Split full result and minimal structured result.
+ * The full object goes into content[].text for Claude to read; the minimal
+ * structured object goes into structuredContent to match outputSchema.
+ *
+ * @example
+ * return withStructured(fullScanData, { ok: true, action: "scan" });
+ */
+export function withStructured(
+	full: Record<string, unknown>,
+	structured: Record<string, unknown>,
+): ToolResult {
+	return {
+		content: [{ type: "text", text: JSON.stringify(full, null, 2) }],
+		structuredContent: structured,
+	};
+}
+
+/**
+ * Creates a typed error factory with preset default fields.
+ * The returned function accepts an error message and merges it into the defaults.
+ *
+ * @example
+ * const fail = toolFail({ ok: false, creators: null, tool_version: VERSION });
+ * return fail("spreadsheet_id is required");
+ * // → { ok: false, creators: null, tool_version: "...", error: "spreadsheet_id is required" }
+ */
+export function toolFail<T extends Record<string, unknown>>(
+	defaults: T,
+): (error: string) => T & { error: string } {
+	return (error: string) => ({ ...defaults, error });
+}
+
+/** Input type for defineTool — decoupled from SharedToolDefinition for correct Zod 4 TShape inference */
+type ToolDefinitionInput<
+	TShape extends ZodRawShape,
+	OShape extends ZodRawShape = ZodRawShape,
+> = {
+	name: string;
+	title?: string;
+	description: string;
+	inputSchema: ZodObject<TShape>;
+	outputSchema?: OShape | ZodObject<OShape>;
 	handler: (
 		args: z.infer<ZodObject<TShape>>,
 		context: ToolContext,
 	) => Promise<ToolResult | Record<string, unknown>>;
+	requiresAuth?: boolean;
+	annotations?: SharedToolDefinition["annotations"];
+	/** Auto-injected into every handler result as tool_version / tool_last_update */
+	meta?: {
+		version?: string;
+		last_update?: string;
+	};
 };
 
 function isToolResult(value: unknown): value is ToolResult {
@@ -211,24 +257,48 @@ function isToolResult(value: unknown): value is ToolResult {
  * Helper to create a type-safe tool definition.
  * Handlers can return either a ToolResult or a plain object — plain objects are
  * automatically wrapped as { content: [{ type: "text", text: JSON.stringify(result) }], structuredContent: result }.
+ *
+ * If `meta` is provided, tool_version and tool_last_update are automatically
+ * injected into every result (including error paths).
  */
-export function defineTool<TShape extends ZodRawShape>(
-	def: ToolDefinitionInput<TShape>,
-): SharedToolDefinition<TShape> {
-	if (def.outputSchema) {
-		def.outputSchema = normalizeOutputSchema(def.outputSchema);
-	}
-	const originalHandler = def.handler;
+export function defineTool<
+	TShape extends ZodRawShape,
+	OShape extends ZodRawShape = ZodRawShape,
+>(def: ToolDefinitionInput<TShape, OShape>): SharedToolDefinition<TShape> {
+	const {
+		outputSchema: rawOutputSchema,
+		meta,
+		handler: originalHandler,
+		...rest
+	} = def;
+	const outputSchema = rawOutputSchema
+		? normalizeOutputSchema(rawOutputSchema)
+		: undefined;
 	return {
-		...def,
+		...rest,
+		outputSchema,
 		handler: async (args, context) => {
 			const result = await originalHandler(args, context);
-			if (isToolResult(result)) return result;
+			const metaFields: Record<string, unknown> = {};
+			if (meta?.version !== undefined) metaFields.tool_version = meta.version;
+			if (meta?.last_update !== undefined)
+				metaFields.tool_last_update = meta.last_update;
+			const hasMeta = Object.keys(metaFields).length > 0;
+			if (isToolResult(result)) {
+				if (hasMeta && result.structuredContent) {
+					return {
+						...result,
+						structuredContent: { ...result.structuredContent, ...metaFields },
+					};
+				}
+				return result;
+			}
+			const merged = hasMeta ? { ...result, ...metaFields } : result;
 			return {
 				content: [
-					{ type: "text" as const, text: JSON.stringify(result, null, 2) },
+					{ type: "text" as const, text: JSON.stringify(merged, null, 2) },
 				],
-				structuredContent: result,
+				structuredContent: merged,
 			};
 		},
 	};

@@ -1,6 +1,6 @@
 # @phake/mcp
 
-A TypeScript library for building [MCP (Model Context Protocol)](https://modelcontextprotocol.io) servers on Cloudflare Workers.
+A TypeScript library for building [MCP (Model Context Protocol)](https://modelcontextprotocol.io) servers - works on both Cloudflare Workers and Node.js.
 
 [![npm](https://img.shields.io/npm/v/@phake/mcp?style=flat-square)](https://www.npmjs.com/package/@phake/mcp)
 [![license](https://img.shields.io/npm/l/@phake/mcp?style=flat-square)](LICENSE)
@@ -25,14 +25,16 @@ A TypeScript library for building [MCP (Model Context Protocol)](https://modelco
 
 ## Requirements
 
-- [Bun](https://bun.sh) or Node.js 20+
-- [Wrangler](https://developers.cloudflare.com/workers/wrangler/) CLI
-- A Cloudflare account with Workers and KV access
+- [Bun](https://bun.sh) 1.x or Node.js 20+
+- [Wrangler](https://developers.cloudflare.com/workers/wrangler/) CLI (for Cloudflare Workers deployments)
+- A Cloudflare account with Workers and KV access (for Worker deployments)
 
 ## Installation
 
 ```bash
 bun add @phake/mcp
+# or
+npm install @phake/mcp
 ```
 
 ## Getting Started
@@ -151,6 +153,22 @@ const greetTool = defineTool({
 | `requiresAuth` | `boolean` | No | Reject calls without a provider token |
 | `title` | `string` | No | Human-readable display title |
 | `annotations` | `object` | No | MCP hints (`readOnlyHint`, `destructiveHint`, etc.) |
+| `meta` | `{ version?, last_update? }` | No | Auto-injected into every result as `tool_version` / `tool_last_update` |
+
+**Handler return values:**
+
+Handlers can return either a full `ToolResult` or a plain object. Plain objects are automatically wrapped as structured content:
+
+```typescript
+// Plain object - auto-wrapped
+handler: async (args) => ({ greeting: `Hello, ${args.name}!` })
+
+// Full ToolResult - passed through unchanged
+handler: async (args) => ({
+  content: [{ type: "text", text: `Hello, ${args.name}!` }],
+  structuredContent: { greeting: `Hello, ${args.name}!` },
+})
+```
 
 ### Authenticated Tools
 
@@ -178,8 +196,20 @@ const profileTool = defineTool({
 | `sessionId` | Current MCP session ID |
 | `providerToken` | Access token for external API calls |
 | `resolvedHeaders` | Ready-to-use auth headers for `fetch` |
-| `authStrategy` | Active auth strategy |
-| `signal` | `AbortSignal` for cancellation |
+| `authStrategy` | Active auth strategy (`oauth`, `bearer`, `api_key`, `custom`, `none`) |
+| `provider` | Provider info (OAuth only) |
+| `signal` | `AbortSignal` for cancellation support |
+
+Use the `assertProviderToken` helper to narrow the context type when you need a guaranteed token:
+
+```typescript
+import { assertProviderToken } from "@phake/mcp";
+
+handler: async (_args, context) => {
+  assertProviderToken(context); // throws if missing
+  // context.providerToken is now typed as string
+},
+```
 
 ### Authentication Strategies
 
@@ -226,21 +256,50 @@ export default server;
 | `adapter` | `"worker"` | Runtime adapter |
 | `tools` | `SharedToolDefinition[]` | Tools to register |
 
+### `defineTool(def)`
+
+Type-safe tool factory. See [Defining Tools](#defining-tools) for the full field reference.
+
+### `withStructured(full, structured)`
+
+Helper to split a large response object (for LLM context) from a compact structured output (for `outputSchema`):
+
+```typescript
+import { withStructured } from "@phake/mcp";
+
+handler: async (args) =>
+  withStructured(
+    { ...fullScanData, debug: "..." }, // full - goes into content[].text
+    { ok: true, count: 5 },            // structured — matches outputSchema
+  ),
+```
+
+### `toolFail(defaults)`
+
+Creates a typed error factory with preset default fields:
+
+```typescript
+import { toolFail } from "@phake/mcp";
+
+const fail = toolFail({ ok: false, items: null });
+return fail("spreadsheet_id is required");
+// => { ok: false, items: null, error: "spreadsheet_id is required" }
+```
+
 ### Built-in Tools
 
 | Tool | Input | Output | Description |
 |------|-------|--------|-------------|
-| `echo` | `{ message, uppercase? }` | `{ echoed, length }` | Echoes back a message |
-| `health` | `{ verbose? }` | `{ status, timestamp, runtime, uptime? }` | Reports server health |
+| `echo` | `{ message, uppercase? }` | `{ echoed, length }` | Echoes back a message, optionally uppercased |
+| `health` | `{ verbose? }` | `{ status, timestamp, runtime, uptime? }` | Reports server health and runtime info |
 
 ### Package Exports
 
-| Export | Path |
-|--------|------|
-| Core | `@phake/mcp` |
-| Worker runtime | `@phake/mcp/runtime/worker` |
-
-> **Node.js runtime** (`@phake/mcp/runtime/node`) is available but experimental and untested.
+| Export | Path | Description |
+|--------|------|-------------|
+| Core | `@phake/mcp` | `defineTool`, `createMCPServer`, helpers |
+| Worker runtime | `@phake/mcp/runtime/worker` | Cloudflare Workers adapter internals |
+| Node runtime | `@phake/mcp/runtime/node` | Node.js adapter internals (**experimental**) |
 
 ## Endpoints
 
@@ -280,7 +339,9 @@ All configuration is read from environment variables / Wrangler bindings.
 | `OAUTH_SCOPES` | OAuth only | Space-separated OAuth scopes |
 | `OAUTH_REDIRECT_URI` | OAuth only | Redirect URI after authorization |
 | `API_KEY` | api_key only | Static API key value |
+| `API_KEY_HEADER` | api_key only | Header name for API key (default: `x-api-key`) |
 | `BEARER_TOKEN` | bearer only | Static Bearer token value |
+| `CUSTOM_HEADERS` | custom only | JSON-encoded headers object |
 | `BASE_URL` | No | Base URL override (for reverse proxies) |
 | `LOG_LEVEL` | No | `debug` \| `info` \| `warning` \| `error` (default: `info`) |
 
@@ -290,11 +351,14 @@ All configuration is read from environment variables / Wrangler bindings.
 # Install dependencies
 bun install
 
-# Build
-bun run build
+# Run tests
+bun test
 
 # Type check
 bun run typecheck
+
+# Build
+bun run build
 ```
 
 **Project structure:**
@@ -302,15 +366,17 @@ bun run typecheck
 ```
 src/
 ├── adapters/
+│   ├── http-node/      # Node.js (Hono) adapter
 │   └── http-worker/    # Cloudflare Workers adapter
 ├── shared/
 │   ├── auth/           # Authentication strategies
 │   ├── config/         # Environment configuration
 │   ├── crypto/         # AES-256-GCM utilities
-│   ├── mcp/            # Protocol dispatcher and server internals
-│   ├── oauth/          # OAuth 2.0 (PKCE, CIMD, discovery)
-│   ├── storage/        # Token/session store interfaces and implementations
-│   └── tools/          # Tool definitions, registry, execution
+│   ├── oauth/          # OAuth 2.1 (PKCE, CIMD, discovery)
+│   ├── tools/          # Tool definitions, registry, execution
+│   ├── types/          # Shared TypeScript types
+│   └── utils/          # Base64, pagination, logging helpers
+├── __tests__/          # Unit tests (Bun test runner)
 ├── mcp-server.ts       # Server factory
 └── index.ts            # Package entry point
 ```
