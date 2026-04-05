@@ -66,7 +66,7 @@ describe("base64UrlEncodeJson / base64UrlDecodeJson", () => {
 	test("roundtrips a plain object", () => {
 		const obj = { offset: 10, foo: "bar" };
 		const encoded = base64UrlEncodeJson(obj);
-		expect(base64UrlDecodeJson(encoded)).toEqual(obj);
+		expect(base64UrlDecodeJson<typeof obj>(encoded)).toEqual(obj);
 	});
 
 	test("returns empty string for non-serializable value", () => {
