@@ -2,8 +2,11 @@
 
 A TypeScript library for building [MCP (Model Context Protocol)](https://modelcontextprotocol.io) servers - works on both Cloudflare Workers and Node.js.
 
+Built on [`@modelcontextprotocol/server`](https://www.npmjs.com/package/@modelcontextprotocol/server) v2 and [Zod](https://zod.dev) v4.
+
 [![npm](https://img.shields.io/npm/v/@phake/mcp?style=flat-square)](https://www.npmjs.com/package/@phake/mcp)
 [![license](https://img.shields.io/npm/l/@phake/mcp?style=flat-square)](LICENSE)
+[![mcp-sdk](https://img.shields.io/badge/@modelcontextprotocol%2Fserver-2.0.0--alpha-blue?style=flat-square)](https://www.npmjs.com/package/@modelcontextprotocol/server)
 
 ---
 
@@ -30,6 +33,15 @@ A TypeScript library for building [MCP (Model Context Protocol)](https://modelco
 - [Bun](https://bun.sh) 1.x or Node.js 20+
 - [Wrangler](https://developers.cloudflare.com/workers/wrangler/) CLI (for Cloudflare Workers deployments)
 - A Cloudflare account with Workers and KV access (for Worker deployments)
+
+**Internal dependencies (bundled):**
+
+| Package | Version | Notes |
+|---------|---------|-------|
+| `@modelcontextprotocol/server` | `2.0.0-alpha.2` | MCP SDK v2 (pre-alpha) |
+| `zod` | `^4.x` | Schema validation |
+
+**Supported MCP protocol versions:** `2025-06-18`, `2025-03-26`, `2024-11-05`, `2024-10-07`
 
 ## Installation
 
@@ -180,7 +192,7 @@ const greetTool = defineTool({
 | `name` | `string` | Yes | Unique tool identifier |
 | `description` | `string` | Yes | Description shown to the LLM |
 | `inputSchema` | `ZodObject` | Yes | Zod schema for input validation |
-| `outputSchema` | `ZodRawShape \| ZodObject` | No | Zod schema for structured output |
+| `outputSchema` | `ZodRawShape \| ZodObject` | No | Zod schema for structured output (both raw shape and `z.object({...})` accepted) |
 | `handler` | `function` | Yes | `(args, context) => Promise<ToolResult \| Record<string, unknown>>` |
 | `requiresAuth` | `boolean` | No | Reject calls without a provider token |
 | `title` | `string` | No | Human-readable display title |
@@ -498,14 +510,18 @@ src/
 ├── adapters/
 │   ├── http-node/      # Node.js (Hono) adapter
 │   └── http-worker/    # Cloudflare Workers adapter
+├── runtime/
+│   ├── node/           # Node.js runtime (McpServer + WebStandardStreamableHTTPServerTransport)
+│   └── worker/         # Cloudflare Workers runtime (custom JSON-RPC dispatcher)
 ├── shared/
 │   ├── auth/           # Authentication strategies
 │   ├── config/         # Environment configuration
 │   ├── crypto/         # AES-256-GCM utilities
+│   ├── mcp/            # MCP dispatcher and server internals
 │   ├── oauth/          # OAuth 2.1 (PKCE, CIMD, discovery)
 │   ├── tools/          # Tool definitions, registry, execution
 │   ├── types/          # Shared TypeScript types
-│   └── utils/          # Base64, pagination, logging helpers
+│   └── utils/          # Sampling, elicitation, progress, roots, logging helpers
 ├── __tests__/          # Unit tests (Bun test runner)
 ├── mcp-server.ts       # Server factory
 └── index.ts            # Package entry point

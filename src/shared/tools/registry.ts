@@ -3,9 +3,14 @@
  * Tools defined here work in both Node.js and Cloudflare Workers.
  */
 
-import type { CallToolResult, McpServer, ServerContext, StandardSchemaWithJSON } from "@modelcontextprotocol/server";
-import { z } from "zod";
+import type {
+	CallToolResult,
+	McpServer,
+	ServerContext,
+	StandardSchemaWithJSON,
+} from "@modelcontextprotocol/server";
 import type { ZodObject, ZodRawShape } from "zod";
+import { z } from "zod";
 import { getCurrentAuthContext } from "../../runtime/node/context.js";
 import { toProviderInfo } from "../types/provider.js";
 import { logger } from "../utils/logger.js";
@@ -199,16 +204,18 @@ export function registerTools(
 			{
 				description: tool.description,
 				inputSchema: tool.inputSchema as unknown as StandardSchemaWithJSON,
-				...(tool.outputSchema && { outputSchema: z.object(tool.outputSchema) as unknown as StandardSchemaWithJSON }),
+				...(tool.outputSchema && {
+					outputSchema: z.object(
+						tool.outputSchema,
+					) as unknown as StandardSchemaWithJSON,
+				}),
 				...(tool.annotations && { annotations: tool.annotations }),
 			},
 			async (args: unknown, ctx: ServerContext) => {
 				// Look up auth context from registry if resolver provided
 				const requestId = ctx.mcpReq.id;
 				const authContext =
-					requestId && contextResolver
-						? contextResolver(requestId)
-						: undefined;
+					requestId && contextResolver ? contextResolver(requestId) : undefined;
 
 				// Fallback to AsyncLocalStorage if requestId not available
 				const resolved = authContext ?? getCurrentAuthContext();
@@ -230,7 +237,11 @@ export function registerTools(
 					resolvedHeaders: resolved?.resolvedHeaders,
 				} as ToolContext;
 
-				const result = await executeSharedTool(tool.name, args as Record<string, unknown>, context);
+				const result = await executeSharedTool(
+					tool.name,
+					args as Record<string, unknown>,
+					context,
+				);
 				return result as CallToolResult;
 			},
 		);
