@@ -1,6 +1,6 @@
 {
 	"name": "@phake/mcp",
-	"version": "0.2.0",
+	"version": "0.2.1",
 	"repository": {
 		"type": "git",
 		"url": "https://github.com/fuongz/phake-mcp"
@@ -32,7 +32,7 @@
 		}
 	},
 	"scripts": {
-		"build": "bun build src/index.ts src/runtime/worker/index.ts --outdir dist --target browser --splitting --packages external && bun build src/runtime/node/index.ts --outdir dist/runtime/node --target bun && tsc -p tsconfig.build.json",
+		"build": "bun build src/index.ts src/runtime/worker/index.ts --outdir dist --target browser --splitting --packages external && bun build src/runtime/node/index.ts --outdir dist/runtime/node --target bun && tsc -p tsconfig.build.json && bun run build:create",
 		"build:create": "bun build src/create-mcp/index.ts --outfile=./bin/create-mcp --target=node --format=esm --banner='#!'",
 		"test": "bun test src/__tests__",
 		"typecheck": "tsc --noEmit",

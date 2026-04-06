@@ -335,14 +335,14 @@ MCP transport types vary by client:
 
 #### Claude Web (Custom Connectors)
 
-Custom connectors cho phép kết nối MCP server từ claude.ai, Cowork, và Claude Desktop. Server phải publicly accessible (không thể dùng localhost).
+Custom connectors allow connecting an MCP server from claude.ai, Cowork, and Claude Desktop. The server must be publicly accessible (localhost is not supported).
 
-**Thêm connector:**
+**Adding a connector:**
 
 1. **Pro/Max plans**: Navigate to **Customize > Connectors** > click "+" > "Add custom connector"
-2. **Team/Enterprise**: Owner thêm ở **Organization settings > Connectors**, sau đó members connect
+2. **Team/Enterprise**: Owner adds it under **Organization settings > Connectors**, then members connect
 
-**Cấu hình:**
+**Configuration:**
 ```json
 {
   "url": "https://your-mcp-server.com/mcp",
@@ -355,14 +355,14 @@ Custom connectors cho phép kết nối MCP server từ claude.ai, Cowork, và C
 ```
 
 **Network requirements:**
-- Server phải publicly accessible từ internet
-- Claude connect từ Anthropic's cloud infrastructure, không phải từ máy local
-- Cần allowlist Anthropic IP addresses nếu server có firewall
+- Server must be publicly accessible from the internet
+- Claude connects from Anthropic's cloud infrastructure, not from your local machine
+- Allowlist Anthropic IP addresses if your server has a firewall
 
 **Security:**
-- Chỉ connect đến servers bạn trust
-- Review permissions khi auth
-- Có thể disable tools không cần thiết
+- Only connect to servers you trust
+- Review permissions when authenticating
+- You can disable tools you don't need
 
 Xem thêm: [Building custom connectors via remote MCP servers](https://support.claude.com/en/articles/11503834-building-custom-connectors-via-remote-mcp-servers)
 
