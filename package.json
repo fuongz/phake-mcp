@@ -9,13 +9,8 @@
 	"type": "module",
 	"main": "./dist/index.js",
 	"types": "./dist/index.d.ts",
-	"bin": {
-		"create-phake-mcp": "./bin/create-mcp"
-	},
 	"files": [
-		"dist",
-		"bin",
-		"templates"
+		"dist"
 	],
 	"exports": {
 		".": {
@@ -32,8 +27,7 @@
 		}
 	},
 	"scripts": {
-		"build": "bun build src/index.ts src/runtime/worker/index.ts --outdir dist --target browser --splitting --packages external && bun build src/runtime/node/index.ts --outdir dist/runtime/node --target bun && tsc -p tsconfig.build.json && bun run build:create",
-		"build:create": "bun build src/create-mcp/index.ts --outfile=./bin/create-mcp --target=node --format=esm --banner='#!'",
+		"build": "bun build src/index.ts src/runtime/worker/index.ts --outdir dist --target browser --splitting --packages external && bun build src/runtime/node/index.ts --outdir dist/runtime/node --target bun && tsc -p tsconfig.build.json",
 		"test": "bun test src/__tests__",
 		"typecheck": "tsc --noEmit",
 		"lint": "biome check .",
@@ -43,17 +37,10 @@
 		"version:patch": "bun scripts/version.ts patch"
 	},
 	"dependencies": {
-		"@bluwy/giget-core": "^0.1.6",
-		"@inquirer/confirm": "^5.1.8",
-		"@inquirer/input": "^4.1.8",
-		"@inquirer/select": "^4.1.0",
 		"@modelcontextprotocol/sdk": "^1.29.0",
-		"commander": "^13.1.0",
 		"itty-router": "^5.0.23",
 		"jose": "^6.2.2",
-		"nanospinner": "^1.2.2",
 		"oauth4webapi": "^3.8.5",
-		"picocolors": "^1.1.1",
 		"zod": "^4.3.6"
 	},
 	"optionalDependencies": {
