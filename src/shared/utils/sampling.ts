@@ -12,8 +12,7 @@
  * - This enables agentic behaviors in server tools
  */
 
-import type { Server } from "@modelcontextprotocol/sdk/server/index.js";
-import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import type { McpServer } from "@modelcontextprotocol/server";
 import { logger } from "./logger.js";
 
 /**
@@ -102,10 +101,6 @@ export interface CreateMessageResponse {
 	stopReason?: "endTurn" | "stopSequence" | "maxTokens";
 }
 
-function getLowLevelServer(server: McpServer): Server {
-	return (server as unknown as { server: Server }).server;
-}
-
 /**
  * Request LLM sampling from the client.
  *
@@ -149,7 +144,7 @@ export async function requestSampling(
 	});
 
 	try {
-		const lowLevel = getLowLevelServer(server);
+		const lowLevel = server.server;
 
 		const params = {
 			messages: request.messages,
@@ -192,7 +187,7 @@ export async function requestSampling(
  */
 export function clientSupportsSampling(server: McpServer): boolean {
 	try {
-		const lowLevel = getLowLevelServer(server);
+		const lowLevel = server.server;
 		const clientCapabilities = lowLevel.getClientCapabilities?.() ?? {};
 		return Boolean(clientCapabilities.sampling);
 	} catch {
@@ -208,7 +203,7 @@ export function clientSupportsSampling(server: McpServer): boolean {
  */
 export function clientSupportsSamplingTools(server: McpServer): boolean {
 	try {
-		const lowLevel = getLowLevelServer(server);
+		const lowLevel = server.server;
 		const clientCapabilities = lowLevel.getClientCapabilities?.() ?? {};
 		const sampling = clientCapabilities.sampling as
 			| { tools?: boolean }

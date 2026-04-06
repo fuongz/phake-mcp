@@ -4,8 +4,8 @@
 
 import { randomUUID } from "node:crypto";
 import type { HttpBindings } from "@hono/node-server";
-import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
+import type { McpServer } from "@modelcontextprotocol/server";
+import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/server";
 import { Hono } from "hono";
 import {
 	authContextStorage,
@@ -66,28 +66,28 @@ function resolveSessionApiKey(
 
 export function buildMcpRoutes(params: {
 	server: McpServer;
-	transports: Map<string, StreamableHTTPServerTransport>;
+	transports: Map<string, WebStandardStreamableHTTPServerTransport>;
 }) {
 	const { server, transports } = params;
 	const app = new Hono<{ Bindings: HttpBindings }>();
 	const sessionStore = getSessionStore();
 
-	const connectedStreamableHTTPServerTransports =
-		new WeakSet<StreamableHTTPServerTransport>();
+	const connectedWebStandardStreamableHTTPServerTransports =
+		new WeakSet<WebStandardStreamableHTTPServerTransport>();
 
 	const MCP_SESSION_HEADER = "Mcp-Session-Id";
 
 	async function ensureConnected(
-		transport: StreamableHTTPServerTransport,
+		transport: WebStandardStreamableHTTPServerTransport,
 	): Promise<void> {
-		if (!connectedStreamableHTTPServerTransports.has(transport)) {
+		if (!connectedWebStandardStreamableHTTPServerTransports.has(transport)) {
 			await server.connect(transport);
-			connectedStreamableHTTPServerTransports.add(transport);
+			connectedWebStandardStreamableHTTPServerTransports.add(transport);
 		}
 	}
 
 	/**
-	 * Shared handler for all HTTP methods. Since StreamableHTTPServerTransport
+	 * Shared handler for all HTTP methods. Since WebStandardStreamableHTTPServerTransport
 	 * accepts a standard Request and returns a standard Response, we pass c.req.raw
 	 * directly — no toReqRes/toFetchResponse shim needed.
 	 */
@@ -163,11 +163,11 @@ export function buildMcpRoutes(params: {
 					});
 				}
 				if (!existingSession) {
-					const staleStreamableHTTPServerTransport =
+					const staleWebStandardStreamableHTTPServerTransport =
 						transports.get(sessionIdHeader);
-					if (staleStreamableHTTPServerTransport) {
+					if (staleWebStandardStreamableHTTPServerTransport) {
 						transports.delete(sessionIdHeader);
-						staleStreamableHTTPServerTransport.close();
+						staleWebStandardStreamableHTTPServerTransport.close();
 					}
 					return c.text("Invalid session", 404);
 				}
@@ -217,7 +217,7 @@ export function buildMcpRoutes(params: {
 					}
 					return c.text("Invalid session", 404);
 				}
-				const created = new StreamableHTTPServerTransport({
+				const created = new WebStandardStreamableHTTPServerTransport({
 					sessionIdGenerator: () => sessionId as string,
 					onsessioninitialized: async (sid: string) => {
 						transports.set(sid, created);
@@ -248,7 +248,7 @@ export function buildMcpRoutes(params: {
 
 			transport.onerror = (error) => {
 				void logger.error("transport", {
-					message: "StreamableHTTPServerTransport error",
+					message: "WebStandardStreamableHTTPServerTransport error",
 					error: error.message,
 				});
 			};

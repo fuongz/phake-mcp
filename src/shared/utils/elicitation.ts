@@ -15,14 +15,9 @@
  * - Clients display the form/URL and return user response
  */
 
-import type { Server } from "@modelcontextprotocol/sdk/server/index.js";
-import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import type { McpServer } from "@modelcontextprotocol/server";
 import { z } from "zod";
 import { logger } from "./logger.js";
-
-function getLowLevelServer(server: McpServer): Server {
-	return (server as unknown as { server: Server }).server;
-}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Schema Types
@@ -214,7 +209,7 @@ export function validateElicitationSchema(schema: ElicitationSchema): void {
  */
 export function clientSupportsFormElicitation(server: McpServer): boolean {
 	try {
-		const lowLevel = getLowLevelServer(server);
+		const lowLevel = server.server;
 		const clientCapabilities = lowLevel.getClientCapabilities?.() ?? {};
 		// Empty elicitation object is treated as { form: {} }
 		return Boolean(clientCapabilities.elicitation);
@@ -228,7 +223,7 @@ export function clientSupportsFormElicitation(server: McpServer): boolean {
  */
 export function clientSupportsUrlElicitation(server: McpServer): boolean {
 	try {
-		const lowLevel = getLowLevelServer(server);
+		const lowLevel = server.server;
 		const clientCapabilities = lowLevel.getClientCapabilities?.() ?? {};
 		return Boolean(clientCapabilities.elicitation?.url);
 	} catch {
@@ -290,7 +285,7 @@ export async function elicitForm(
 	});
 
 	try {
-		const lowLevel = getLowLevelServer(server);
+		const lowLevel = server.server;
 
 		const response = await lowLevel.elicitInput({
 			mode: "form",
@@ -348,7 +343,7 @@ export async function elicitUrl(
 	});
 
 	try {
-		const lowLevel = getLowLevelServer(server);
+		const lowLevel = server.server;
 
 		const response = await lowLevel.elicitInput({
 			mode: "url",
@@ -391,7 +386,7 @@ export async function notifyElicitationComplete(
 	});
 
 	try {
-		const lowLevel = getLowLevelServer(server);
+		const lowLevel = server.server;
 		const notifyComplete =
 			lowLevel.createElicitationCompletionNotifier(elicitationId);
 		await notifyComplete();

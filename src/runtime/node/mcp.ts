@@ -1,5 +1,4 @@
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { SetLevelRequestSchema } from "@modelcontextprotocol/sdk/types.js";
+import { McpServer } from "@modelcontextprotocol/server";
 import { getLowLevelServer } from "../../shared/mcp/server-internals.js";
 import {
 	type ContextResolver,
@@ -68,13 +67,6 @@ export function buildServer(options: ServerOptions): McpServer {
 
 	// Register handlers with context resolver for auth data
 	registerTools(server, contextResolver);
-
-	// Register logging/setLevel handler (required when logging capability is advertised)
-	server.server.setRequestHandler(SetLevelRequestSchema, async (request) => {
-		const level = request.params.level;
-		logger.info("mcp", { message: "Log level changed", level });
-		return {};
-	});
 
 	return server;
 }

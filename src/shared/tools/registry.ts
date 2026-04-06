@@ -3,54 +3,15 @@
  * Tools defined here work in both Node.js and Cloudflare Workers.
  */
 
-import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
-import type { ZodObject, ZodRawShape, ZodType } from "zod";
+import type { CallToolResult, McpServer, ServerContext, StandardSchemaWithJSON } from "@modelcontextprotocol/server";
+import { z } from "zod";
+import type { ZodObject, ZodRawShape } from "zod";
 import { getCurrentAuthContext } from "../../runtime/node/context.js";
 import { toProviderInfo } from "../types/provider.js";
 import { logger } from "../utils/logger.js";
 import { echoTool } from "./echo.js";
 import { healthTool } from "./health.js";
 import type { SharedToolDefinition, ToolContext, ToolResult } from "./types.js";
-
-/**
- * Extract the shape from a Zod schema, handling ZodEffects (refined schemas).
- * ZodEffects wraps the inner schema when using .refine(), .transform(), etc.
- */
-function getSchemaShape(schema: ZodType): ZodRawShape | undefined {
-	// If it's a ZodObject, return its shape directly
-	if ("shape" in schema && typeof schema.shape === "object") {
-		return (schema as ZodObject<ZodRawShape>).shape;
-	}
-
-	// If it's a ZodEffects (from .refine(), .transform(), etc.), unwrap to get inner schema
-	if ("def" in schema && schema.def && typeof schema.def === "object") {
-		const def = schema.def as { schema?: ZodType; innerType?: ZodType };
-		// ZodEffects stores the inner schema in _def.schema
-		if (def.schema) {
-			return getSchemaShape(def.schema);
-		}
-		// Some Zod versions use _def.innerType
-		if (def.innerType) {
-			return getSchemaShape(def.innerType);
-		}
-	}
-
-	return undefined;
-}
-
-/**
- * Extra data passed to tool handlers by the SDK.
- * Matches the SDK's RequestHandlerExtra for tool callbacks.
- */
-interface ToolHandlerExtra {
-	sessionId?: string;
-	requestId?: string | number;
-	signal?: AbortSignal;
-	_meta?: {
-		progressToken?: string | number;
-	};
-}
 
 /**
  * Optional context resolver for Node.js runtime.
@@ -233,55 +194,43 @@ export function registerTools(
 	contextResolver?: ContextResolver,
 ): void {
 	for (const tool of sharedTools) {
-		// Extract shape from schema, handling ZodEffects (refined schemas)
-		const inputSchemaShape = getSchemaShape(tool.inputSchema);
-		if (!inputSchemaShape) {
-			logger.error("tools", {
-				message: "Failed to extract schema shape",
-				toolName: tool.name,
-			});
-			throw new Error(`Failed to extract schema shape for tool: ${tool.name}`);
-		}
-
 		server.registerTool(
 			tool.name,
 			{
 				description: tool.description,
-				inputSchema: inputSchemaShape,
-				...(tool.outputSchema && { outputSchema: tool.outputSchema }),
+				inputSchema: tool.inputSchema as unknown as StandardSchemaWithJSON,
+				...(tool.outputSchema && { outputSchema: z.object(tool.outputSchema) as unknown as StandardSchemaWithJSON }),
 				...(tool.annotations && { annotations: tool.annotations }),
 			},
-			async (args: Record<string, unknown>, extra: ToolHandlerExtra) => {
+			async (args: unknown, ctx: ServerContext) => {
 				// Look up auth context from registry if resolver provided
+				const requestId = ctx.mcpReq.id;
 				const authContext =
-					extra.requestId && contextResolver
-						? contextResolver(extra.requestId)
+					requestId && contextResolver
+						? contextResolver(requestId)
 						: undefined;
 
 				// Fallback to AsyncLocalStorage if requestId not available
-				// This is the primary method since MCP SDK doesn't pass requestId to tool handlers
-				const ctx = authContext ?? getCurrentAuthContext();
+				const resolved = authContext ?? getCurrentAuthContext();
 
-				// Convert ProviderTokens to ProviderInfo
-				const authCtx = ctx;
-				const providerInfo = authCtx?.provider
-					? toProviderInfo(authCtx.provider as any)
+				const providerInfo = resolved?.provider
+					? toProviderInfo(resolved.provider as any)
 					: undefined;
 
 				const context: ToolContext = {
-					sessionId: extra.sessionId ?? crypto.randomUUID(),
-					signal: extra.signal,
+					sessionId: ctx.sessionId ?? crypto.randomUUID(),
+					signal: ctx.mcpReq.signal,
 					meta: {
-						progressToken: extra._meta?.progressToken,
-						requestId: extra.requestId?.toString(),
+						progressToken: ctx.mcpReq._meta?.progressToken,
+						requestId: requestId?.toString(),
 					},
-					authStrategy: authCtx?.authStrategy,
-					providerToken: authCtx?.providerToken,
+					authStrategy: resolved?.authStrategy,
+					providerToken: resolved?.providerToken,
 					provider: providerInfo,
-					resolvedHeaders: authCtx?.resolvedHeaders,
+					resolvedHeaders: resolved?.resolvedHeaders,
 				} as ToolContext;
 
-				const result = await executeSharedTool(tool.name, args, context);
+				const result = await executeSharedTool(tool.name, args as Record<string, unknown>, context);
 				return result as CallToolResult;
 			},
 		);

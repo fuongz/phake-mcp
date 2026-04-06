@@ -6,7 +6,7 @@
  * This module provides typed helpers to access these internals safely.
  */
 
-import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import type { McpServer } from "@modelcontextprotocol/server";
 
 /**
  * Shape of the internal server with commonly used methods.
@@ -54,8 +54,7 @@ interface McpServerWithInternals {
  * Returns the internal Server or falls back to the McpServer itself.
  */
 export function getLowLevelServer(server: McpServer): LowLevelServer {
-	const extended = server as unknown as McpServerWithInternals;
-	return (extended.server ?? server) as unknown as LowLevelServer;
+	return server.server as unknown as LowLevelServer;
 }
 
 /**

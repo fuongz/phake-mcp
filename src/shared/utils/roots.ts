@@ -12,7 +12,7 @@
  * - This enables file-based tools to know allowed paths
  */
 
-import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import type { McpServer } from "@modelcontextprotocol/server";
 import {
 	getLowLevelServer,
 	isJsonRpcError,
