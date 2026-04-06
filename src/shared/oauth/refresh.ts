@@ -22,23 +22,37 @@ export interface ProviderRefreshConfig {
  * Returns undefined if required fields are missing.
  */
 export function buildProviderRefreshConfig(config: {
+	AUTH_STRATEGY?: string;
 	PROVIDER_CLIENT_ID?: string;
 	PROVIDER_CLIENT_SECRET?: string;
 	PROVIDER_ACCOUNTS_URL?: string;
 	OAUTH_TOKEN_URL?: string;
+	OAUTH_CLIENT_ID?: string;
+	OAUTH_CLIENT_SECRET?: string;
 }): ProviderRefreshConfig | undefined {
-	if (
-		!config.PROVIDER_CLIENT_ID ||
-		!config.PROVIDER_CLIENT_SECRET ||
-		!config.PROVIDER_ACCOUNTS_URL
-	) {
+	const isGoogle = config.AUTH_STRATEGY === "google";
+
+	const clientId =
+		config.PROVIDER_CLIENT_ID ||
+		(isGoogle ? config.OAUTH_CLIENT_ID : undefined);
+	const clientSecret =
+		config.PROVIDER_CLIENT_SECRET ||
+		(isGoogle ? config.OAUTH_CLIENT_SECRET : undefined);
+	const accountsUrl =
+		config.PROVIDER_ACCOUNTS_URL ||
+		(isGoogle ? "https://accounts.google.com" : undefined);
+
+	if (!clientId || !clientSecret || !accountsUrl) {
 		return undefined;
 	}
+
 	return {
-		clientId: config.PROVIDER_CLIENT_ID,
-		clientSecret: config.PROVIDER_CLIENT_SECRET,
-		accountsUrl: config.PROVIDER_ACCOUNTS_URL,
-		tokenEndpointPath: config.OAUTH_TOKEN_URL,
+		clientId,
+		clientSecret,
+		accountsUrl,
+		tokenEndpointPath:
+			config.OAUTH_TOKEN_URL ||
+			(isGoogle ? "https://oauth2.googleapis.com/token" : undefined),
 	};
 }
 

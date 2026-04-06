@@ -174,8 +174,8 @@ async function resolveAuthContext(
 	let provider: ToolContext["provider"];
 	let resolvedHeaders = { ...rawHeaders };
 
-	if (strategy === "oauth") {
-		// OAuth: map RS token to provider token
+	if (strategy === "oauth" || strategy === "google") {
+		// OAuth/Google: map RS token to provider token
 		const authHeader = rawHeaders.authorization;
 		const match = authHeader?.match(/^\s*Bearer\s+(.+)$/i);
 		const rsToken = match?.[1];

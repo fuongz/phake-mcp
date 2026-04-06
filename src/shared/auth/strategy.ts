@@ -100,6 +100,9 @@ export function parseAuthStrategy(
 		case "none":
 			return { type: "none" };
 
+		case "google":
+			return { type: "google" };
+
 		default:
 			// Default to OAuth if AUTH_ENABLED or no strategy specified (including 'oauth')
 			return { type: "oauth" };
@@ -134,9 +137,10 @@ export function buildAuthHeaders(
 			}
 			break;
 
+		case "google":
 		case "oauth":
 		case "none":
-			// OAuth headers are resolved dynamically via RS token mapping
+			// OAuth/Google headers are resolved dynamically via RS token mapping
 			// 'none' has no headers
 			break;
 	}
@@ -181,7 +185,7 @@ export function mergeAuthHeaders(
  * Check if auth strategy requires OAuth flow.
  */
 export function isOAuthStrategy(config: AuthStrategyConfig): boolean {
-	return config.type === "oauth";
+	return config.type === "oauth" || config.type === "google";
 }
 
 /**
@@ -216,6 +220,15 @@ export function validateAuthConfig(config: AuthStrategyConfig): string[] {
 				Object.keys(config.customHeaders).length === 0
 			) {
 				errors.push("CUSTOM_HEADERS is required when AUTH_STRATEGY=custom");
+			}
+			break;
+
+		case "google":
+		case "oauth":
+			if (!config.value) {
+				errors.push(
+					"OAUTH_CLIENT_ID is required when AUTH_STRATEGY=google|oauth",
+				);
 			}
 			break;
 	}
