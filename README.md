@@ -228,7 +228,7 @@ const profileTool = defineTool({
 | `sessionId` | Current MCP session ID |
 | `providerToken` | Access token for external API calls |
 | `resolvedHeaders` | Ready-to-use auth headers for `fetch` |
-| `authStrategy` | Active auth strategy (`oauth`, `bearer`, `api_key`, `custom`, `none`) |
+| `authStrategy` | Active auth strategy (`oauth`, `google`, `bearer`, `api_key`, `custom`, `none`) |
 | `provider` | Provider info (OAuth only) |
 | `signal` | `AbortSignal` for cancellation support |
 
@@ -250,6 +250,7 @@ Set `AUTH_STRATEGY` in your environment (or let it be inferred from which keys a
 | Strategy | Description | Required env vars |
 |----------|-------------|-------------------|
 | `oauth` | Full OAuth 2.1 PKCE flow with RS token => provider token mapping | `OAUTH_CLIENT_ID`, `OAUTH_CLIENT_SECRET`, `OAUTH_SCOPES`, `OAUTH_REDIRECT_URI`, `PROVIDER_CLIENT_ID`, `PROVIDER_CLIENT_SECRET`, `PROVIDER_ACCOUNTS_URL` |
+| `google` | Same as OAuth but with Google preset endpoints | `OAUTH_CLIENT_ID`, `OAUTH_CLIENT_SECRET`, `OAUTH_SCOPES`, `OAUTH_REDIRECT_URI` |
 | `bearer` | Static Bearer token | `BEARER_TOKEN` |
 | `api_key` | Static API key via header (default: `x-api-key`) | `API_KEY`, `API_KEY_HEADER` |
 | `custom` | Arbitrary custom request headers | `CUSTOM_HEADERS` |
@@ -463,11 +464,15 @@ All configuration is read from environment variables / Wrangler bindings.
 |----------|----------|-------------|
 | `TOKENS` | Yes | Cloudflare KV namespace binding for token/session storage |
 | `RS_TOKENS_ENC_KEY` | Yes | Base64url-encoded 32-byte AES-256-GCM encryption key |
-| `AUTH_STRATEGY` | No | `oauth` \| `bearer` \| `api_key` \| `custom` \| `none` (inferred if unset) |
-| `OAUTH_CLIENT_ID` | OAuth only | OAuth client ID |
-| `OAUTH_CLIENT_SECRET` | OAuth only | OAuth client secret |
-| `OAUTH_SCOPES` | OAuth only | Space-separated OAuth scopes |
-| `OAUTH_REDIRECT_URI` | OAuth only | Redirect URI after authorization |
+| `AUTH_STRATEGY` | No | `oauth` \| `google` \| `bearer` \| `api_key` \| `custom` \| `none` (inferred if unset) |
+| `OAUTH_CLIENT_ID` | OAuth/Google | OAuth client ID |
+| `OAUTH_CLIENT_SECRET` | OAuth/Google | OAuth client secret |
+| `OAUTH_SCOPES` | OAuth/Google | Space-separated OAuth scopes |
+| `OAUTH_REDIRECT_URI` | OAuth/Google | Redirect URI after authorization |
+| `PROVIDER_ACCOUNTS_URL` | OAuth only | Provider accounts URL (for Google: auto-set to `https://accounts.google.com`) |
+| `PROVIDER_API_URL` | No | Provider API URL |
+| `OAUTH_AUTHORIZATION_URL` | OAuth only | Custom authorization URL (for Google: auto-set to `https://accounts.google.com/o/oauth2/v2/auth`) |
+| `OAUTH_TOKEN_URL` | OAuth only | Custom token URL (for Google: auto-set to `https://oauth2.googleapis.com/token`) |
 | `API_KEY` | api_key only | Static API key value |
 | `API_KEY_HEADER` | api_key only | Header name for API key (default: `x-api-key`) |
 | `BEARER_TOKEN` | bearer only | Static Bearer token value |

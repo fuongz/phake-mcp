@@ -7,12 +7,19 @@
  * Supported authentication strategies.
  *
  * - 'oauth': Full OAuth 2.1 PKCE flow with RS token → provider token mapping
+ * - 'google': Google OAuth 2.0 flow
  * - 'bearer': Simple static Bearer token (from BEARER_TOKEN env)
  * - 'api_key': API key in custom header (from API_KEY env)
  * - 'custom': Arbitrary headers from CUSTOM_HEADERS config
  * - 'none': No authentication required
  */
-export type AuthStrategy = "oauth" | "bearer" | "api_key" | "custom" | "none";
+export type AuthStrategy =
+	| "oauth"
+	| "google"
+	| "bearer"
+	| "api_key"
+	| "custom"
+	| "none";
 
 /**
  * Auth headers extracted from incoming requests.

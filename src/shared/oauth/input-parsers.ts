@@ -92,6 +92,11 @@ export function buildTokenInput(
  * Build ProviderConfig from UnifiedConfig.
  */
 export function buildProviderConfig(config: UnifiedConfig): ProviderConfig {
+	// For Google strategy, use preset endpoints
+	if (config.AUTH_STRATEGY === "google") {
+		return buildGoogleProviderConfig(config);
+	}
+
 	// Pass full URLs directly — new URL(absoluteUrl, base) ignores the base,
 	// so providers with different hosts for auth vs token (e.g. Google) work correctly.
 	return {
@@ -102,6 +107,28 @@ export function buildProviderConfig(config: UnifiedConfig): ProviderConfig {
 		extraAuthParams: config.OAUTH_EXTRA_AUTH_PARAMS,
 		authorizationEndpointPath: config.OAUTH_AUTHORIZATION_URL,
 		tokenEndpointPath: config.OAUTH_TOKEN_URL,
+	};
+}
+
+/**
+ * Build Google-specific ProviderConfig with preset endpoints.
+ */
+export function buildGoogleProviderConfig(
+	config: UnifiedConfig,
+): ProviderConfig {
+	return {
+		clientId: config.PROVIDER_CLIENT_ID || config.OAUTH_CLIENT_ID,
+		clientSecret: config.PROVIDER_CLIENT_SECRET || config.OAUTH_CLIENT_SECRET,
+		accountsUrl: config.PROVIDER_ACCOUNTS_URL || "https://accounts.google.com",
+		oauthScopes:
+			config.OAUTH_SCOPES ||
+			"https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive.readonly",
+		extraAuthParams: config.OAUTH_EXTRA_AUTH_PARAMS,
+		authorizationEndpointPath:
+			config.OAUTH_AUTHORIZATION_URL ||
+			"https://accounts.google.com/o/oauth2/v2/auth",
+		tokenEndpointPath:
+			config.OAUTH_TOKEN_URL || "https://oauth2.googleapis.com/token",
 	};
 }
 

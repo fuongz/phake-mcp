@@ -85,6 +85,7 @@ export function createMcpSecurityMiddleware(
 							const authContext = {
 								strategy: config.AUTH_STRATEGY as
 									| "oauth"
+									| "google"
 									| "bearer"
 									| "api_key"
 									| "custom"

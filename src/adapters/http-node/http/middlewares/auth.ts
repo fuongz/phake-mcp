@@ -87,6 +87,7 @@ function buildStaticAuthHeaders(
  *
  * Strategies:
  * - 'oauth': Map RS token → Provider token (full OAuth flow)
+ * - 'google': Same as OAuth but with Google preset endpoints
  * - 'bearer': Use static BEARER_TOKEN from config
  * - 'api_key': Use static API_KEY in API_KEY_HEADER
  * - 'custom': Use static CUSTOM_HEADERS
@@ -135,6 +136,7 @@ export function createAuthHeaderMiddleware(): MiddlewareHandler<{
 		// Handle based on strategy
 		switch (strategy) {
 			case "oauth":
+			case "google":
 				await handleOAuthStrategy(authContext, forwarded, config);
 				break;
 

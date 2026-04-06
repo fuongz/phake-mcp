@@ -102,7 +102,9 @@ function parseAuthStrategy(env: Record<string, unknown>): AuthStrategyType {
 	const explicit = (env.AUTH_STRATEGY as string)?.toLowerCase();
 	if (
 		explicit &&
-		["oauth", "bearer", "api_key", "custom", "none"].includes(explicit)
+		["oauth", "google", "bearer", "api_key", "custom", "none"].includes(
+			explicit,
+		)
 	) {
 		return explicit as AuthStrategyType;
 	}
