@@ -5,7 +5,6 @@ import {
 	defineTool,
 	normalizeOutputSchema,
 	toolFail,
-	withStructured,
 } from "../../../shared/tools/types.js";
 import type { ToolContext, ToolResult } from "../../../shared/tools/types.js";
 
@@ -29,26 +28,7 @@ describe("normalizeOutputSchema", () => {
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-// withStructured
-// ─────────────────────────────────────────────────────────────────────────────
 
-describe("withStructured", () => {
-	test("puts full data as JSON text content", () => {
-		const full = { a: 1, b: "x" };
-		const structured = { ok: true };
-		const result = withStructured(full, structured);
-		expect(result.content).toHaveLength(1);
-		expect(result.content[0].type).toBe("text");
-		expect(JSON.parse((result.content[0] as { type: "text"; text: string }).text)).toEqual(full);
-	});
-
-	test("sets structuredContent to the structured param", () => {
-		const result = withStructured({ big: "object" }, { small: true });
-		expect(result.structuredContent).toEqual({ small: true });
-	});
-});
-
-// ─────────────────────────────────────────────────────────────────────────────
 // toolFail
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -142,25 +122,6 @@ describe("defineTool", () => {
 		const result = await tool.handler({ name: "Bob" }, baseContext) as ToolResult;
 		expect(result.content[0]).toEqual({ type: "text", text: "Bob" });
 		expect(result.structuredContent).toBeUndefined();
-	});
-
-	test("injects meta fields into structuredContent when meta provided", async () => {
-		const tool = defineTool({
-			name: "greet",
-			description: "Greet",
-			inputSchema,
-			meta: { version: "1.0.0", last_update: "2026-01-01" },
-			handler: async ({ name }) => ({
-				content: [{ type: "text" as const, text: name }],
-				structuredContent: { greeting: name },
-			}),
-		});
-		const result = await tool.handler({ name: "Carol" }, baseContext) as ToolResult;
-		expect(result.structuredContent).toMatchObject({
-			greeting: "Carol",
-			tool_version: "1.0.0",
-			tool_last_update: "2026-01-01",
-		});
 	});
 
 	test("injects meta fields into plain object result", async () => {

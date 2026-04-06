@@ -14,6 +14,7 @@ A TypeScript library for building [MCP (Model Context Protocol)](https://modelco
   - [Defining Tools](#defining-tools)
   - [Authenticated Tools](#authenticated-tools)
   - [Authentication Strategies](#authentication-strategies)
+  - [Client Configuration](#client-configuration)
   - [Storage Backends](#storage-backends)
 - [API Reference](#api-reference)
 - [Endpoints](#endpoints)
@@ -223,6 +224,117 @@ Set `AUTH_STRATEGY` in your environment (or let it be inferred from which keys a
 | `custom` | Arbitrary custom request headers | `CUSTOM_HEADERS` |
 | `none` | No authentication | - |
 
+### Client Configuration
+
+MCP transport types vary by client:
+
+| Client | Transport | Config File |
+|--------|-----------|-------------|
+| Claude Desktop | stdio only | `claude_desktop_config.json` |
+| Claude Code | stdio only | `settings.json` in `~/.claude/` |
+| Cursor | stdio + SSE | `mcp.json` in project |
+| VSCode | stdio + SSE | `.vscode/mcp.json` |
+| JetBrains | stdio + HTTP/SSE | IDE settings |
+
+#### Claude Desktop (stdio + remote URL)
+
+**Local (stdio):**
+```json
+{
+  "mcpServers": {
+    "my-api": {
+      "command": "node",
+      "args": ["./dist/index.js"],
+      "env": {
+        "AUTH_STRATEGY": "bearer",
+        "BEARER_TOKEN": "your-token"
+      }
+    }
+  }
+}
+```
+
+**Remote (URL):**
+```json
+{
+  "mcpServers": {
+    "my-api": {
+      "url": "https://your-server.com/mcp",
+      "headers": {
+        "Authorization": "Bearer your-token"
+      }
+    }
+  }
+}
+```
+
+**Location**: `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS) or `%APPDATA%\Claude\` (Windows)
+
+#### Claude Code (stdio)
+
+```json
+{
+  "mcpServers": {
+    "my-api": {
+      "command": "bun",
+      "args": ["run", "./src/index.ts"]
+    }
+  }
+}
+```
+
+**Location**: `~/.claude/settings.json`
+
+#### Cursor / VSCode (SSE)
+
+```json
+{
+  "mcpServers": {
+    "my-api": {
+      "url": "https://your-server.com/mcp",
+      "headers": {
+        "Authorization": "Bearer your-token"
+      }
+    }
+  }
+}
+```
+
+**Location**: Project root `mcp.json` or `.vscode/mcp.json`
+
+#### Claude Web (Custom Connectors)
+
+Custom connectors cho phép kết nối MCP server từ claude.ai, Cowork, và Claude Desktop. Server phải publicly accessible (không thể dùng localhost).
+
+**Thêm connector:**
+
+1. **Pro/Max plans**: Navigate to **Customize > Connectors** > click "+" > "Add custom connector"
+2. **Team/Enterprise**: Owner thêm ở **Organization settings > Connectors**, sau đó members connect
+
+**Cấu hình:**
+```json
+{
+  "url": "https://your-mcp-server.com/mcp",
+  "auth": {
+    "type": "oauth",
+    "clientId": "your-client-id",
+    "clientSecret": "your-client-secret"
+  }
+}
+```
+
+**Network requirements:**
+- Server phải publicly accessible từ internet
+- Claude connect từ Anthropic's cloud infrastructure, không phải từ máy local
+- Cần allowlist Anthropic IP addresses nếu server có firewall
+
+**Security:**
+- Chỉ connect đến servers bạn trust
+- Review permissions khi auth
+- Có thể disable tools không cần thiết
+
+Xem thêm: [Building custom connectors via remote MCP servers](https://support.claude.com/en/articles/11503834-building-custom-connectors-via-remote-mcp-servers)
+
 ### Storage Backends
 
 | Backend | Use case | Notes |
@@ -260,19 +372,6 @@ export default server;
 
 Type-safe tool factory. See [Defining Tools](#defining-tools) for the full field reference.
 
-### `withStructured(full, structured)`
-
-Helper to split a large response object (for LLM context) from a compact structured output (for `outputSchema`):
-
-```typescript
-import { withStructured } from "@phake/mcp";
-
-handler: async (args) =>
-  withStructured(
-    { ...fullScanData, debug: "..." }, // full - goes into content[].text
-    { ok: true, count: 5 },            // structured — matches outputSchema
-  ),
-```
 
 ### `toolFail(defaults)`
 

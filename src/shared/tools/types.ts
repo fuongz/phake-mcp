@@ -188,23 +188,6 @@ export function normalizeOutputSchema(
 	return schema as ZodRawShape;
 }
 
-/**
- * Split full result and minimal structured result.
- * The full object goes into content[].text for Claude to read; the minimal
- * structured object goes into structuredContent to match outputSchema.
- *
- * @example
- * return withStructured(fullScanData, { ok: true, action: "scan" });
- */
-export function withStructured(
-	full: Record<string, unknown>,
-	structured: Record<string, unknown>,
-): ToolResult {
-	return {
-		content: [{ type: "text", text: JSON.stringify(full, null, 2) }],
-		structuredContent: structured,
-	};
-}
 
 /**
  * Creates a typed error factory with preset default fields.
@@ -285,12 +268,6 @@ export function defineTool<
 				metaFields.tool_last_update = meta.last_update;
 			const hasMeta = Object.keys(metaFields).length > 0;
 			if (isToolResult(result)) {
-				if (hasMeta && result.structuredContent) {
-					return {
-						...result,
-						structuredContent: { ...result.structuredContent, ...metaFields },
-					};
-				}
 				return result;
 			}
 			const merged = hasMeta ? { ...result, ...metaFields } : result;
