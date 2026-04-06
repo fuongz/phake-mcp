@@ -69,7 +69,6 @@ export function buildMcpRoutes(params: {
 	transports: Map<string, StreamableHTTPServerTransport>;
 }) {
 	const { server, transports } = params;
-	// const config = parseConfig(process.env as Record<string, unknown>);
 	const app = new Hono<{ Bindings: HttpBindings }>();
 	const sessionStore = getSessionStore();
 
@@ -285,9 +284,7 @@ export function buildMcpRoutes(params: {
 
 			await ensureConnected(transport);
 
-			// eslint-disable-next-line @typescript-eslint/no-explicit-any
 			const response = await authContextStorage.run(requestContext, () =>
-				// eslint-disable-next-line @typescript-eslint/no-explicit-any
 				(transport as any).handleRequest(c.req.raw, {
 					parsedBody: body,
 				} as any),

@@ -1,0 +1,17 @@
+{
+	"name": "my-mcp-app",
+	"version": "1.0.0",
+	"type": "module",
+	"private": true,
+	"scripts": {
+		"dev": "bun run src/index.ts",
+		"start": "bun run src/index.ts"
+	},
+	"dependencies": {
+		"@phake/mcp": "^0.2.0",
+		"zod": "^4.0.0"
+	},
+	"devDependencies": {
+		"bun-types": "^1.3.0"
+	}
+}

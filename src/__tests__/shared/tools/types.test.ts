@@ -1,12 +1,12 @@
 import { describe, expect, test } from "bun:test";
 import { z } from "zod";
+import type { ToolContext, ToolResult } from "../../../shared/tools/types.js";
 import {
 	assertProviderToken,
 	defineTool,
 	normalizeOutputSchema,
 	toolFail,
 } from "../../../shared/tools/types.js";
-import type { ToolContext, ToolResult } from "../../../shared/tools/types.js";
 
 // Minimal valid context for tests
 const baseContext: ToolContext = { sessionId: "test-session" };
@@ -36,7 +36,11 @@ describe("toolFail", () => {
 	test("merges error string into defaults", () => {
 		const fail = toolFail({ ok: false, value: null });
 		const result = fail("something went wrong");
-		expect(result).toEqual({ ok: false, value: null, error: "something went wrong" });
+		expect(result).toEqual({
+			ok: false,
+			value: null,
+			error: "something went wrong",
+		});
 	});
 
 	test("does not mutate defaults", () => {
@@ -53,7 +57,9 @@ describe("toolFail", () => {
 
 describe("assertProviderToken", () => {
 	test("throws when providerToken is missing", () => {
-		expect(() => assertProviderToken(baseContext)).toThrow("Authentication required");
+		expect(() => assertProviderToken(baseContext)).toThrow(
+			"Authentication required",
+		);
 	});
 
 	test("does not throw when providerToken is present", () => {
@@ -105,7 +111,10 @@ describe("defineTool", () => {
 			inputSchema,
 			handler: async ({ name }) => ({ greeting: `Hello ${name}` }),
 		});
-		const result = await tool.handler({ name: "Alice" }, baseContext) as ToolResult;
+		const result = (await tool.handler(
+			{ name: "Alice" },
+			baseContext,
+		)) as ToolResult;
 		expect(result.content[0].type).toBe("text");
 		expect(result.structuredContent).toEqual({ greeting: "Hello Alice" });
 	});
@@ -119,7 +128,10 @@ describe("defineTool", () => {
 				content: [{ type: "text" as const, text: name }],
 			}),
 		});
-		const result = await tool.handler({ name: "Bob" }, baseContext) as ToolResult;
+		const result = (await tool.handler(
+			{ name: "Bob" },
+			baseContext,
+		)) as ToolResult;
 		expect(result.content[0]).toEqual({ type: "text", text: "Bob" });
 		expect(result.structuredContent).toBeUndefined();
 	});
@@ -132,7 +144,10 @@ describe("defineTool", () => {
 			meta: { version: "2.0.0" },
 			handler: async ({ name }) => ({ greeting: name }),
 		});
-		const result = await tool.handler({ name: "Dave" }, baseContext) as ToolResult;
+		const result = (await tool.handler(
+			{ name: "Dave" },
+			baseContext,
+		)) as ToolResult;
 		expect(result.structuredContent).toMatchObject({
 			greeting: "Dave",
 			tool_version: "2.0.0",
@@ -145,7 +160,9 @@ describe("defineTool", () => {
 			description: "Secure tool",
 			inputSchema,
 			requiresAuth: true,
-			handler: async () => ({ content: [{ type: "text" as const, text: "ok" }] }),
+			handler: async () => ({
+				content: [{ type: "text" as const, text: "ok" }],
+			}),
 		});
 		expect(tool.requiresAuth).toBe(true);
 	});

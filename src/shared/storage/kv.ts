@@ -1,6 +1,7 @@
 // Cloudflare KV storage with encryption support
 // Provider-agnostic version from Spotify MCP
 
+import { sharedLogger } from "../utils/logger.js";
 import type {
 	ProviderTokens,
 	RsRecord,
@@ -76,7 +77,10 @@ export class KvTokenStore implements TokenStore {
 		} catch (error) {
 			// KV write failed (likely quota exceeded) - log but don't crash
 			// Fallback memory store will still have the data
-			console.error("[KV] Write failed:", (error as Error).message);
+			sharedLogger.error("kv", {
+				message: "Write failed",
+				error: (error as Error).message,
+			});
 			throw error; // Re-throw so caller knows KV failed
 		}
 	}
@@ -113,10 +117,10 @@ export class KvTokenStore implements TokenStore {
 				this.putJson(`rs:refresh:${rec.rs_refresh_token}`, rec),
 			]);
 		} catch (error) {
-			console.warn(
-				"[KV] Failed to persist RS mapping (using memory fallback):",
-				(error as Error).message,
-			);
+			sharedLogger.warning("kv", {
+				message: "Failed to persist RS mapping (using memory fallback)",
+				error: (error as Error).message,
+			});
 			// Don't throw - memory fallback has the data
 		}
 
@@ -181,10 +185,10 @@ export class KvTokenStore implements TokenStore {
 				]);
 			}
 		} catch (error) {
-			console.warn(
-				"[KV] Failed to update RS mapping (using memory fallback):",
-				(error as Error).message,
-			);
+			sharedLogger.warning("kv", {
+				message: "Failed to update RS mapping (using memory fallback)",
+				error: (error as Error).message,
+			});
 			// Don't throw - memory fallback has the data
 		}
 
@@ -203,10 +207,10 @@ export class KvTokenStore implements TokenStore {
 		try {
 			await this.putJson(`txn:${txnId}`, txn, { expiration: ttl(ttlSeconds) });
 		} catch (error) {
-			console.warn(
-				"[KV] Failed to save transaction (using memory):",
-				(error as Error).message,
-			);
+			sharedLogger.warning("kv", {
+				message: "Failed to save transaction (using memory)",
+				error: (error as Error).message,
+			});
 			// Don't throw - memory has it
 		}
 	}
@@ -366,7 +370,12 @@ export class KvSessionStore implements SessionStore {
 		session.last_accessed = now;
 
 		// Update in KV (fire and forget for performance)
-		this.putSession(sessionId, session).catch(() => {});
+		this.putSession(sessionId, session).catch((error: unknown) => {
+			sharedLogger.warning("kv", {
+				message: "Failed to update session last_accessed",
+				error: (error as Error).message,
+			});
+		});
 
 		return session;
 	}

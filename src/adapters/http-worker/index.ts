@@ -39,7 +39,7 @@ export interface WorkerEnv {
 	[key: string]: unknown;
 }
 
-interface KVNamespace {
+export interface KVNamespace {
 	get(key: string): Promise<string | null>;
 	put(
 		key: string,

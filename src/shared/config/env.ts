@@ -2,6 +2,7 @@
 // Generalized from Spotify MCP implementation
 
 import type { AuthStrategyType } from "../auth/strategy.js";
+import { sharedLogger } from "../utils/logger.js";
 
 export type UnifiedConfig = {
 	// Server
@@ -131,7 +132,7 @@ function parseAuthStrategy(env: Record<string, unknown>): AuthStrategyType {
 export function parseConfig(env: Record<string, unknown>): UnifiedConfig {
 	const authStrategy = parseAuthStrategy(env);
 
-	return {
+	const config: UnifiedConfig = {
 		HOST: String(env.HOST || "127.0.0.1"),
 		PORT: parseNumber(env.PORT, 3000),
 		NODE_ENV: (env.NODE_ENV as UnifiedConfig["NODE_ENV"]) || "development",
@@ -200,4 +201,23 @@ export function parseConfig(env: Record<string, unknown>): UnifiedConfig {
 
 		LOG_LEVEL: (env.LOG_LEVEL as UnifiedConfig["LOG_LEVEL"]) || "info",
 	};
+
+	const isProd = config.NODE_ENV === "production";
+
+	if (isProd && config.OAUTH_REDIRECT_ALLOW_ALL) {
+		sharedLogger.warning("config", {
+			message:
+				"OAUTH_REDIRECT_ALLOW_ALL=true in production — open redirect risk. Any redirect_uri will be accepted.",
+		});
+	}
+
+	if (isProd && config.OAUTH_REDIRECT_URI.startsWith("http://")) {
+		sharedLogger.warning("config", {
+			message:
+				"OAUTH_REDIRECT_URI uses HTTP in production — OAuth tokens may be transmitted insecurely.",
+			uri: config.OAUTH_REDIRECT_URI,
+		});
+	}
+
+	return config;
 }

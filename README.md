@@ -9,6 +9,7 @@ A TypeScript library for building [MCP (Model Context Protocol)](https://modelco
 
 - [Requirements](#requirements)
 - [Installation](#installation)
+- [Quick Start (Scaffold)](#quick-start-scaffold)
 - [Getting Started](#getting-started)
 - [Usage](#usage)
   - [Defining Tools](#defining-tools)
@@ -37,6 +38,36 @@ bun add @phake/mcp
 # or
 npm install @phake/mcp
 ```
+
+## Quick Start (Scaffold)
+
+Scaffold a new MCP server with one command:
+
+```bash
+# Interactive (prompts for template)
+bun create @phake/mcp
+
+# With options
+bun create @phake/mcp my-mcp-app --template cloudflare-workers --install
+```
+
+**Available templates:**
+
+| Template | Description |
+|----------|-------------|
+| `cloudflare-workers` | Cloudflare Workers + Hono (default) |
+| `cloudflare-workers-google` | Cloudflare Workers + Google OAuth |
+| `node-hono` | Node.js + Bun + Hono |
+
+If no template specified, interactive prompt appears (defaults to `cloudflare-workers`).
+
+**Options:**
+
+| Option | Description |
+|--------|-------------|
+| `-t, --template` | Template name |
+| `-i, --install` | Auto install dependencies |
+| `-p, --pm` | Package manager: `npm`, `bun`, `yarn`, `pnpm` |
 
 ## Getting Started
 

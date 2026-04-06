@@ -441,7 +441,6 @@ export async function handleProviderCallback(
 				? decoded.cr
 				: oauthConfig.redirectUri);
 
-
 		const redirect = new URL(safe);
 		redirect.searchParams.set("code", asCode);
 		if (decoded.cs) {

@@ -128,7 +128,10 @@ async function handleToolsList(
 		...(tool.annotations && { annotations: tool.annotations }),
 	}));
 
-	logger.info("[tools/list]", { message: `Exposing ${tools.length} tools`, tools: tools.map((t) => t.name) });
+	logger.info("[tools/list]", {
+		message: `Exposing ${tools.length} tools`,
+		tools: tools.map((t) => t.name),
+	});
 
 	return { result: { tools } };
 }

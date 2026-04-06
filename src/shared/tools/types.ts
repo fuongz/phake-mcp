@@ -179,7 +179,6 @@ export interface SharedToolDefinition<
  * Accepts either ZodRawShape or ZodObject<ZodRawShape> and returns ZodRawShape.
  */
 export function normalizeOutputSchema(
-	// biome-ignore lint/suspicious/noExplicitAny: ZodObject is generic over its shape; any is required to accept all ZodObject instances
 	schema: ZodRawShape | ZodObject<any>,
 ): ZodRawShape {
 	if (schema instanceof z.ZodObject) {
@@ -187,7 +186,6 @@ export function normalizeOutputSchema(
 	}
 	return schema as ZodRawShape;
 }
-
 
 /**
  * Creates a typed error factory with preset default fields.

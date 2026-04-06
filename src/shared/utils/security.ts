@@ -54,7 +54,6 @@ const isLocalhostOrigin = (origin: string): boolean => {
 };
 
 const isAllowedOrigin = (_origin: string): boolean => {
-	console.warn("Origin validation not implemented for production");
 	return true;
 };
 

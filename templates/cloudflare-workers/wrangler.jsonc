@@ -1,0 +1,13 @@
+{
+	"$schema": "./node_modules/wrangler/config-schema.json",
+	"name": "my-mcp-app",
+	"main": "src/index.ts",
+	"compatibility_date": "2026-04-06",
+	"workers_dev": true,
+	"kv_namespaces": [
+		{
+			"binding": "TOKENS",
+			"id": "<your-kv-namespace-id>"
+		}
+	]
+}

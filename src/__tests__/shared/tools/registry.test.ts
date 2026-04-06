@@ -50,18 +50,28 @@ describe("executeSharedTool", () => {
 	test("returns error for unknown tool", async () => {
 		const result = await executeSharedTool("unknown_tool", {}, baseContext);
 		expect(result.isError).toBe(true);
-		expect(result.content[0]).toMatchObject({ type: "text", text: expect.stringContaining("Unknown tool") });
+		expect(result.content[0]).toMatchObject({
+			type: "text",
+			text: expect.stringContaining("Unknown tool"),
+		});
 	});
 
 	test("returns error for invalid input", async () => {
 		// echo requires message (string, min 1)
 		const result = await executeSharedTool("echo", {}, baseContext);
 		expect(result.isError).toBe(true);
-		expect(result.content[0]).toMatchObject({ type: "text", text: expect.stringContaining("Invalid input") });
+		expect(result.content[0]).toMatchObject({
+			type: "text",
+			text: expect.stringContaining("Invalid input"),
+		});
 	});
 
 	test("executes echo tool successfully", async () => {
-		const result = await executeSharedTool("echo", { message: "hi" }, baseContext);
+		const result = await executeSharedTool(
+			"echo",
+			{ message: "hi" },
+			baseContext,
+		);
 		expect(result.isError).toBeFalsy();
 		expect(result.content[0]).toMatchObject({ type: "text", text: "hi" });
 		expect(result.structuredContent).toMatchObject({ echoed: "hi", length: 2 });
@@ -79,7 +89,10 @@ describe("executeSharedTool", () => {
 		const ctx = { ...baseContext, signal: controller.signal };
 		const result = await executeSharedTool("echo", { message: "hi" }, ctx);
 		expect(result.isError).toBe(true);
-		expect(result.content[0]).toMatchObject({ type: "text", text: expect.stringContaining("cancelled") });
+		expect(result.content[0]).toMatchObject({
+			type: "text",
+			text: expect.stringContaining("cancelled"),
+		});
 	});
 
 	test("uses custom tool list when provided", async () => {
@@ -89,7 +102,12 @@ describe("executeSharedTool", () => {
 			inputSchema: z.object({ value: z.number() }),
 			handler: async ({ value }) => ({ result: value * 2 }),
 		});
-		const result = await executeSharedTool("custom", { value: 5 }, baseContext, [customTool as any]);
+		const result = await executeSharedTool(
+			"custom",
+			{ value: 5 },
+			baseContext,
+			[customTool as any],
+		);
 		expect(result.isError).toBeFalsy();
 		expect(result.structuredContent).toMatchObject({ result: 10 });
 	});
@@ -104,10 +122,15 @@ describe("executeSharedTool", () => {
 				throw new Error("boom");
 			},
 		});
-		const result = await executeSharedTool("thrower", {}, baseContext, [throwingTool as any]);
+		const result = await executeSharedTool("thrower", {}, baseContext, [
+			throwingTool as any,
+		]);
 		spy.mockRestore();
 		expect(result.isError).toBe(true);
-		expect(result.content[0]).toMatchObject({ type: "text", text: expect.stringContaining("boom") });
+		expect(result.content[0]).toMatchObject({
+			type: "text",
+			text: expect.stringContaining("boom"),
+		});
 	});
 
 	test("returns error when outputSchema defined but structuredContent missing", async () => {
@@ -120,7 +143,9 @@ describe("executeSharedTool", () => {
 			handler: async () =>
 				({ content: [{ type: "text" as const, text: "ok" }] }) as any,
 		});
-		const result = await executeSharedTool("bad_output", {}, baseContext, [badTool as any]);
+		const result = await executeSharedTool("bad_output", {}, baseContext, [
+			badTool as any,
+		]);
 		expect(result.isError).toBe(true);
 		expect(result.content[0]).toMatchObject({
 			type: "text",

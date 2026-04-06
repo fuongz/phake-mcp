@@ -265,8 +265,7 @@ export function registerTools(
 				// Convert ProviderTokens to ProviderInfo
 				const authCtx = ctx;
 				const providerInfo = authCtx?.provider
-					? // biome-ignore lint/suspicious/noExplicitAny: no need
-						toProviderInfo(authCtx.provider as any)
+					? toProviderInfo(authCtx.provider as any)
 					: undefined;
 
 				const context: ToolContext = {
