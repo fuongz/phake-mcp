@@ -65,10 +65,12 @@ See [Authentication Guide](./authentication.md) for detailed auth configuration.
 
 | Variable | Required | Description |
 |----------|----------|-------------|
-| `PROVIDER_CLIENT_ID` | OAuth | Upstream provider client ID |
-| `PROVIDER_CLIENT_SECRET` | OAuth | Upstream provider client secret |
+| `PROVIDER_CLIENT_ID` | No* | Upstream provider client ID (falls back to `OAUTH_CLIENT_ID`) |
+| `PROVIDER_CLIENT_SECRET` | No* | Upstream provider client secret (falls back to `OAUTH_CLIENT_SECRET`) |
 | `PROVIDER_ACCOUNTS_URL` | OAuth | Provider accounts URL (issuer) |
 | `PROVIDER_API_URL` | No | Provider API URL |
+
+> * Optional — if not set, `OAUTH_CLIENT_ID`/`OAUTH_CLIENT_SECRET` will be used instead.
 
 ### Static Auth
 

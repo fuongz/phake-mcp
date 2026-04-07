@@ -35,10 +35,12 @@ These credentials map RS tokens to upstream provider tokens:
 
 | Variable | Required | Description |
 |----------|----------|-------------|
-| `PROVIDER_CLIENT_ID` | Yes | Upstream provider's client ID |
-| `PROVIDER_CLIENT_SECRET` | Yes | Upstream provider's client secret |
+| `PROVIDER_CLIENT_ID` | No* | Upstream provider's client ID (or use `OAUTH_CLIENT_ID`) |
+| `PROVIDER_CLIENT_SECRET` | No* | Upstream provider's client secret (or use `OAUTH_CLIENT_SECRET`) |
 | `PROVIDER_ACCOUNTS_URL` | Yes | Upstream provider's accounts URL (issuer) |
 | `PROVIDER_API_URL` | No | Upstream provider's API URL |
+
+> * `PROVIDER_CLIENT_ID`/`PROVIDER_CLIENT_SECRET` are optional — if not set, `OAUTH_CLIENT_ID`/`OAUTH_CLIENT_SECRET` will be used instead.
 
 ### OAuth Flow Options
 
