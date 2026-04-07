@@ -158,6 +158,77 @@ const profileTool = defineTool({
 });
 ```
 
+### Cloudflare Bindings
+
+Access Cloudflare worker bindings (AI, Vectorize, D1, R2, KV, etc.) in your tools:
+
+```typescript
+import { createMCPServer, defineTool, type ToolContext } from "@phake/mcp";
+
+interface Env extends Cloudflare.Env {
+  AI: unknown;
+  VECTORIZE: unknown;
+  MY_BUCKET: unknown;
+}
+
+const searchTool = defineTool({
+  name: "search_vectors",
+  inputSchema: z.object({ query: z.string() }),
+  handler: async (args, context: ToolContext<Env>) => {
+    // Type-safe access to bindings
+    const ai = context.bindings?.AI;
+    const vectorize = context.bindings?.VECTORIZE;
+    
+    return {
+      content: [{
+        type: "text",
+        text: `AI: ${!!ai}, Vectorize: ${!!vectorize}`
+      }]
+    };
+  },
+});
+
+const server = createMCPServer<Env>({
+  tools: [searchTool],
+});
+```
+
+### Getting User Info (OAuth)
+
+Fetch user profile from OAuth providers:
+
+```typescript
+import { getUser, USERINFO_ENDPOINTS } from "@phake/mcp";
+
+const userTool = defineTool({
+  name: "get_user_info",
+  requiresAuth: true,
+  inputSchema: z.object({}),
+  handler: async (_, context) => {
+    const accessToken = context.providerToken;
+    if (!accessToken) {
+      return { content: [{ type: "text", text: "Not authenticated" }], isError: true };
+    }
+
+    const userinfo = await getUser(accessToken, USERINFO_ENDPOINTS.google);
+    if (!userinfo) {
+      return { content: [{ type: "text", text: "Failed to fetch user" }], isError: true };
+    }
+
+    return {
+      content: [{
+        type: "text",
+        text: JSON.stringify({ email: userinfo.email, name: userinfo.name })
+      }]
+    };
+  },
+});
+```
+
+Available endpoints:
+- `USERINFO_ENDPOINTS.google` - `"https://www.googleapis.com/oauth2/v2/userinfo"`
+- `USERINFO_ENDPOINTS.github` - `"https://api.github.com/user"`
+
 ### Authentication Strategies
 
 | Strategy | Description |

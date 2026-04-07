@@ -8,3 +8,4 @@ export * from "./input-parsers.js";
 export * from "./refresh.js";
 export * from "./ssrf.js";
 export * from "./types.js";
+export * from "./userinfo.js";

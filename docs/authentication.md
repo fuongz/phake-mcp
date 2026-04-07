@@ -236,3 +236,125 @@ const tool = defineTool({
 | `authStrategy` | AuthStrategy | Active auth strategy |
 | `provider` | ProviderInfo \| undefined | Full provider token info (OAuth only) |
 | `signal` | AbortSignal | Cancellation support |
+| `bindings` | TEnv \| undefined | Cloudflare worker bindings (see [Cloudflare Bindings](#cloudflare-bindings)) |
+
+## Getting User Info (OAuth)
+
+When using OAuth authentication, you may need to fetch the user's profile information (email, name, etc.) from the provider. @phake/mcp provides utilities for this:
+
+### Using getUser Helper
+
+```typescript
+import { getUser, USERINFO_ENDPOINTS } from "@phake/mcp";
+
+const tool = defineTool({
+  name: "get_profile",
+  requiresAuth: true,
+  handler: async (args, context) => {
+    const accessToken = context.providerToken;
+    if (!accessToken) {
+      return { content: [{ type: "text", text: "Not authenticated" }], isError: true };
+    }
+
+    // Fetch user info from provider
+    const userinfo = await getUser(accessToken, USERINFO_ENDPOINTS.google);
+    
+    if (!userinfo) {
+      return { content: [{ type: "text", text: "Failed to fetch user info" }], isError: true };
+    }
+
+    return {
+      content: [{
+        type: "text",
+        text: JSON.stringify({
+          email: userinfo.email,
+          name: userinfo.name,
+          id: userinfo.id,
+        })
+      }]
+    };
+  },
+});
+```
+
+### Available Endpoints
+
+```typescript
+import { USERINFO_ENDPOINTS } from "@phake/mcp";
+
+USERINFO_ENDPOINTS.google  // "https://www.googleapis.com/oauth2/v2/userinfo"
+USERINFO_ENDPOINTS.github  // "https://api.github.com/user"
+```
+
+### ProviderInfo Structure
+
+When using OAuth, the `context.provider` object contains:
+
+```typescript
+interface ProviderInfo {
+  accessToken: string;        // Current access token
+  refreshToken?: string;     // Refresh token (if available)
+  expiresAt?: number;        // Token expiration timestamp
+  scopes?: string[];         // Granted scopes
+  idTokenClaims?: Record<string, unknown>;  // ID token claims (if available)
+}
+```
+
+> **Note:** To get `idTokenClaims`, ensure your `OAUTH_SCOPES` includes `openid` or `email`. For Google, use `OAUTH_SCOPES=openid email profile`.
+
+## Cloudflare Bindings
+
+When running @phake/mcp in Cloudflare Workers, you can access Cloudflare bindings (AI, Vectorize, D1, R2, KV, etc.) in your tool handlers.
+
+### Setup
+
+Pass your worker `Env` type to `createMCPServer`:
+
+```typescript
+import { createMCPServer, defineTool, type ToolContext } from "@phake/mcp";
+
+interface Env extends Cloudflare.Env {
+  AI: unknown;
+  VECTORIZE: unknown;
+  MY_BUCKET: unknown;
+}
+
+const server = createMCPServer<Env>({
+  tools: [myTool],
+});
+
+export default { fetch: server.fetch };
+```
+
+### Accessing Bindings in Tools
+
+```typescript
+const myTool = defineTool({
+  name: "search_vectors",
+  inputSchema: z.object({ query: z.string() }),
+  handler: async (args, context: ToolContext<Env>) => {
+    // Type-safe access to bindings
+    const ai = context.bindings?.AI;
+    const vectorize = context.bindings?.VECTORIZE;
+    const bucket = context.bindings?.MY_BUCKET;
+
+    return {
+      content: [{
+        type: "text",
+        text: `AI: ${!!ai}, Vectorize: ${!!vectorize}, Bucket: ${!!bucket}`
+      }]
+    };
+  },
+});
+```
+
+### Bindings Available
+
+The following Cloudflare bindings are available through `context.bindings`:
+
+- **AI** - Cloudflare AI binding (embeddings, chat, etc.)
+- **VECTORIZE** - Cloudflare Vectorize index
+- **D1** - Cloudflare D1 database
+- **R2** - Cloudflare R2 object storage
+- **KV** - Cloudflare KV namespace
+- Any custom bindings defined in your `wrangler.toml`
