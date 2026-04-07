@@ -97,6 +97,11 @@ export function buildProviderConfig(config: UnifiedConfig): ProviderConfig {
 		return buildGoogleProviderConfig(config);
 	}
 
+	// For GitHub strategy, use preset endpoints
+	if (config.AUTH_STRATEGY === "github") {
+		return buildGitHubProviderConfig(config);
+	}
+
 	// Pass full URLs directly — new URL(absoluteUrl, base) ignores the base,
 	// so providers with different hosts for auth vs token (e.g. Google) work correctly.
 	return {
@@ -129,6 +134,27 @@ export function buildGoogleProviderConfig(
 			"https://accounts.google.com/o/oauth2/v2/auth",
 		tokenEndpointPath:
 			config.OAUTH_TOKEN_URL || "https://oauth2.googleapis.com/token",
+	};
+}
+
+/**
+ * Build GitHub-specific ProviderConfig with preset endpoints.
+ * Uses OAUTH_* env vars (shared with other OAuth providers).
+ */
+export function buildGitHubProviderConfig(
+	config: UnifiedConfig,
+): ProviderConfig {
+	return {
+		clientId: config.OAUTH_CLIENT_ID || config.PROVIDER_CLIENT_ID,
+		clientSecret: config.OAUTH_CLIENT_SECRET || config.PROVIDER_CLIENT_SECRET,
+		accountsUrl: config.PROVIDER_ACCOUNTS_URL || "https://github.com",
+		oauthScopes: config.OAUTH_SCOPES || "read:user",
+		extraAuthParams: config.OAUTH_EXTRA_AUTH_PARAMS,
+		authorizationEndpointPath:
+			config.OAUTH_AUTHORIZATION_URL ||
+			"https://github.com/login/oauth/authorize",
+		tokenEndpointPath:
+			config.OAUTH_TOKEN_URL || "https://github.com/login/oauth/access_token",
 	};
 }
 

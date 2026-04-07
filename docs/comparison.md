@@ -14,73 +14,73 @@
 
 | Feature | @phake/mcp | Official SDK |
 |---------|-----------|--------------|
-| Tools (registerTool) | ✅ `defineTool` + `createMCPServer` | ✅ `McpServer.registerTool` |
-| Resources | ✅ | ✅ |
-| Prompts | ✅ | ✅ |
-| Tool annotations | ✅ (readOnlyHint, destructiveHint, idempotentHint) | ✅ |
-| Input/Output schemas | ✅ Zod | ✅ Zod/Standard Schema |
-| Error handling (isError) | ✅ | ✅ |
-| Logging | ✅ | ✅ |
-| Progress notifications | ✅ | ✅ |
-| Sampling | ✅ | ✅ |
-| Elicitation | ✅ | ✅ |
-| Roots | ✅ | ✅ |
-| Resource templates | ✅ | ✅ |
+| Tools (registerTool) | [x] `defineTool` + `createMCPServer` | [x] `McpServer.registerTool` |
+| Resources | [x] | [x] |
+| Prompts | [x] | [x] |
+| Tool annotations | [x] (readOnlyHint, destructiveHint, idempotentHint) | [x] |
+| Input/Output schemas | [x] Zod | [x] Zod/Standard Schema |
+| Error handling (isError) | [x] | [x] |
+| Logging | [x] | [x] |
+| Progress notifications | [x] | [x] |
+| Sampling | [x] | [x] |
+| Elicitation | [x] | [x] |
+| Roots | [x] | [x] |
+| Resource templates | [x] | [x] |
 
 ### Authentication & Security
 
 | Feature | @phake/mcp | Official SDK |
 |---------|-----------|--------------|
-| OAuth 2.1 (RS → Provider) | ✅ Full flow | ❌ Not built-in |
-| OAuth with Google preset | ✅ `AUTH_STRATEGY=google` | ❌ Not built-in |
-| Bearer token (static) | ✅ | ❌ Not built-in |
-| API Key | ✅ | ❌ Not built-in |
-| Custom headers | ✅ | ❌ Not built-in |
-| Token encryption (AES-256-GCM) | ✅ | ❌ Not built-in |
-| Token refresh (proactive) | ✅ | ❌ Not built-in |
-| DNS rebinding protection | ✅ | ✅ (via middleware) |
-| CIMD (SEP-991) | ✅ Client metadata validation | ❌ Not built-in |
+| OAuth 2.1 (RS => Provider) | [x] Full flow | [ ] Not built-in |
+| OAuth with Google preset | [x] `AUTH_STRATEGY=google` | [ ] Not built-in |
+| Bearer token (static) | [x] | [ ] Not built-in |
+| API Key | [x] | [ ] Not built-in |
+| Custom headers | [x] | [ ] Not built-in |
+| Token encryption (AES-256-GCM) | [x] | [ ] Not built-in |
+| Token refresh (proactive) | [x] | [ ] Not built-in |
+| DNS rebinding protection | [x] | [x] (via middleware) |
+| CIMD (SEP-991) | [x] Client metadata validation | [ ] Not built-in |
 
 ### Storage & State
 
 | Feature | @phake/mcp | Official SDK |
 |---------|-----------|--------------|
-| KV-based token store | ✅ (Cloudflare KV + memory fallback) | ❌ Not built-in |
-| File-based token store | ✅ (experimental) | ❌ Not built-in |
-| Session store | ✅ (KV/SQLite/Memory) | ❌ Not built-in |
-| In-memory token store | ✅ | ✅ (InMemoryTaskStore) |
+| KV-based token store | [x] (Cloudflare KV + memory fallback) | [ ] Not built-in |
+| File-based token store | [x] (experimental) | [ ] Not built-in |
+| Session store | [x] (KV/SQLite/Memory) | [ ] Not built-in |
+| In-memory token store | [x] | [x] (InMemoryTaskStore) |
 
 ### Deployment & Runtime
 
 | Feature | @phake/mcp | Official SDK |
 |---------|-----------|--------------|
-| Cloudflare Workers | ✅ Native | ✅ (Web Standard) |
-| Node.js | ✅ (Hono) | ✅ |
-| Bun/Deno | ✅ (via Node adapter) | ✅ |
-| stdio transport | ✅ | ✅ |
-| Streamable HTTP | ✅ (with session management) | ✅ |
-| Multi-session management | ✅ Built-in | ✅ (manual) |
+| Cloudflare Workers | [x] Native | [x] (Web Standard) |
+| Node.js | [x] (Hono) | [x] |
+| Bun/Deno | [x] (via Node adapter) | [x] |
+| stdio transport | [x] | [x] |
+| Streamable HTTP | [x] (with session management) | [x] |
+| Multi-session management | [x] Built-in | [x] (manual) |
 
 ### Developer Experience
 
 | Feature | @phake/mcp | Official SDK |
 |---------|-----------|--------------|
-| Type-safe tool definition | ✅ `defineTool` factory | ✅ Manual |
-| Built-in tools (echo, health) | ✅ | ❌ Not built-in |
-| Tool registry | ✅ | ✅ |
-| Scaffold CLI | ✅ `bun create @phake/mcp` | ❌ Not built-in |
-| Hot reload (dev) | ✅ via Wrangler | ❌ Manual |
+| Type-safe tool definition | [x] `defineTool` factory | [x] Manual |
+| Built-in tools (echo, health) | [x] | [ ] Not built-in |
+| Tool registry | [x] | [x] |
+| Scaffold CLI | [x] `bun create @phake/mcp` | [ ] Not built-in |
+| Hot reload (dev) | [x] via Wrangler | [ ] Manual |
 | Package exports | Modular (core, worker, node) | Modular (server, client, middleware) |
 
 ### OAuth Flow Details
 
 | Feature | @phake/mcp | Official SDK |
 |---------|-----------|--------------|
-| PKCE support | ✅ | ✅ |
-| Dynamic client registration | ✅ (RFC 7591) | ❌ Not built-in |
-| Token revocation | ✅ (RFC 7009) | ❌ Not built-in |
-| OAuth discovery endpoints | ✅ `/.well-known/oauth-*` | ❌ Not built-in |
-| Provider token mapping | ✅ RS → Provider | ❌ Not built-in |
+| PKCE support | [x] | [x] |
+| Dynamic client registration | [x] (RFC 7591) | [ ] Not built-in |
+| Token revocation | [x] (RFC 7009) | [ ] Not built-in |
+| OAuth discovery endpoints | [x] `/.well-known/oauth-*` | [ ] Not built-in |
+| Provider token mapping | [x] RS => Provider | [ ] Not built-in |
 
 ## When to Use Which
 

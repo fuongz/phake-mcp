@@ -137,6 +137,7 @@ export function createAuthHeaderMiddleware(): MiddlewareHandler<{
 		switch (strategy) {
 			case "oauth":
 			case "google":
+			case "github":
 				await handleOAuthStrategy(authContext, forwarded, config);
 				break;
 

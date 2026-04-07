@@ -8,6 +8,7 @@
  *
  * - 'oauth': Full OAuth 2.1 PKCE flow with RS token → provider token mapping
  * - 'google': Google OAuth 2.0 flow
+ * - 'github': GitHub OAuth 2.0 flow
  * - 'bearer': Simple static Bearer token (from BEARER_TOKEN env)
  * - 'api_key': API key in custom header (from API_KEY env)
  * - 'custom': Arbitrary headers from CUSTOM_HEADERS config
@@ -16,6 +17,7 @@
 export type AuthStrategy =
 	| "oauth"
 	| "google"
+	| "github"
 	| "bearer"
 	| "api_key"
 	| "custom"

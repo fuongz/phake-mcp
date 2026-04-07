@@ -8,8 +8,9 @@ Set `AUTH_STRATEGY` in your environment to choose how clients authenticate:
 
 | Strategy | Description | Required env vars |
 |----------|-------------|-------------------|
-| `oauth` | Full OAuth 2.1 PKCE flow with RS token → provider token mapping | See [OAuth Configuration](#oauth-configuration) |
+| `oauth` | Full OAuth 2.1 PKCE flow with RS token -> provider token mapping | See [OAuth Configuration](#oauth-configuration) |
 | `google` | Same as OAuth with Google preset endpoints | See [Google Configuration](#google-configuration) |
+| `github` | Same as OAuth with GitHub preset endpoints | See [GitHub Configuration](#github-configuration) |
 | `bearer` | Static Bearer token | `BEARER_TOKEN` |
 | `api_key` | Static API key via header | `API_KEY`, `API_KEY_HEADER` (optional) |
 | `custom` | Arbitrary custom headers | `CUSTOM_HEADERS` |
@@ -55,11 +56,25 @@ These credentials map RS tokens to upstream provider tokens:
 
 The `google` strategy simplifies Google OAuth by providing preset endpoints:
 
+### Creating a Google OAuth Client
+
+1. Go to the [Google Cloud Console](https://console.cloud.google.com/)
+2. Select or create a project
+3. Navigate to **APIs & Services** > **Credentials**
+4. Click **Create Credentials** > **OAuth client ID**
+5. For Application type, select **Web application**
+6. Configure the authorized redirect URI:
+   - For production: `https://your-domain.com/oauth/callback`
+   - For local development: `http://localhost:3000/oauth/callback`
+7. Copy the **Client ID** and **Client Secret**
+
+### Environment Setup
+
 ```bash
 AUTH_STRATEGY=google
-OAUTH_CLIENT_ID=your-google-client-id
-OAUTH_CLIENT_SECRET=your-google-client-secret
-OAUTH_SCOPES=https://www.googleapis.com/auth/drive.readonly
+OAUTH_CLIENT_ID=your-google-client-id.apps.googleusercontent.com
+OAUTH_CLIENT_SECRET=GOCSPX-your-secret
+OAUTH_SCOPES=https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive.readonly
 OAUTH_REDIRECT_URI=https://your-server.com/oauth/callback
 ```
 
@@ -83,6 +98,66 @@ OAUTH_CLIENT_SECRET=GOCSPX-your-secret
 OAUTH_SCOPES=https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive.readonly
 OAUTH_REDIRECT_URI=https://my-mcp.example.com/oauth/callback
 AUTH_ALLOW_DIRECT_BEARER=true
+```
+
+## GitHub Configuration
+
+The `github` strategy provides preset endpoints for GitHub OAuth:
+
+### Creating a GitHub OAuth App
+
+1. Go to your GitHub account **Settings** > **Developer settings**
+2. Select **OAuth Apps** > **New OAuth App**
+3. Fill in the application details:
+   - **Application name**: Choose a descriptive name (e.g., "My MCP Server")
+   - **Homepage URL**: Your server's homepage URL (e.g., `https://my-mcp.example.com`)
+   - **Authorization callback URL**: 
+     - For production: `https://your-domain.com/oauth/callback`
+     - For local development: `http://localhost:3000/oauth/callback`
+4. Click **Register application**
+5. On the next page, click **Generate a new client secret**
+6. Copy the **Client ID** and **Client Secret**
+
+### Environment Setup
+
+```bash
+AUTH_STRATEGY=github
+OAUTH_CLIENT_ID=your-github-client-id
+OAUTH_CLIENT_SECRET=your-github-client-secret
+OAUTH_SCOPES=read:user,repo
+OAUTH_REDIRECT_URI=https://your-server.com/oauth/callback
+```
+
+### Preset Values
+
+| Setting | Default |
+|---------|---------|
+| Accounts URL | `https://github.com` |
+| Authorization URL | `https://github.com/login/oauth/authorize` |
+| Token URL | `https://github.com/login/oauth/access_token` |
+| Default scopes | `read:user` |
+
+### Available Scopes
+
+GitHub OAuth scopes you may need:
+
+| Scope | Description |
+|-------|-------------|
+| `read:user` | Read user profile information |
+| `user:email` | Read user email addresses |
+| `read:org` | Read organization membership |
+| `repo` | Full control of private and public repositories |
+| `repo:status` | Commit status access |
+| `workflow` | Update GitHub Actions workflow files |
+
+### Example: GitHub API Access
+
+```bash
+AUTH_STRATEGY=github
+OAUTH_CLIENT_ID=Iv1.xxxxxxxx
+OAUTH_CLIENT_SECRET=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+OAUTH_SCOPES=read:user,repo
+OAUTH_REDIRECT_URI=https://my-mcp.example.com/oauth/callback
 ```
 
 ## Bearer Token

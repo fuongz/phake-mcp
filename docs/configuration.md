@@ -37,14 +37,14 @@ See [Authentication Guide](./authentication.md) for detailed auth configuration.
 
 | Variable | Description |
 |----------|-------------|
-| `AUTH_STRATEGY` | Auth strategy: `oauth`, `google`, `bearer`, `api_key`, `custom`, `none` |
+| `AUTH_STRATEGY` | Auth strategy: `oauth`, `google`, `github`, `bearer`, `api_key`, `custom`, `none` |
 | `AUTH_ENABLED` | Enable authentication (default: inferred from strategy) |
 | `AUTH_REQUIRE_RS` | Require RS token for access |
 | `AUTH_ALLOW_DIRECT_BEARER` | Allow direct bearer tokens without RS mapping |
 | `AUTH_RESOURCE_URI` | Resource URI for OAuth discovery |
 | `AUTH_DISCOVERY_URL` | OAuth discovery URL override |
 
-### OAuth / Google
+### OAuth / Google / GitHub
 
 | Variable | Required | Description |
 |----------|----------|-------------|
@@ -59,7 +59,7 @@ See [Authentication Guide](./authentication.md) for detailed auth configuration.
 | `OAUTH_TOKEN_URL` | No | Override token endpoint |
 | `OAUTH_REVOCATION_URL` | No | Token revocation endpoint |
 
-*Required for `google` strategy; for `oauth` also requires `PROVIDER_*` variables.
+*Required for `google` and `github` strategies; for `oauth` also requires `PROVIDER_*` variables.
 
 ### Provider (OAuth only)
 

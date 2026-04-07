@@ -56,7 +56,7 @@ export type UnifiedConfig = {
 	/** Comma-separated list of allowed domains for CIMD client_ids */
 	CIMD_ALLOWED_DOMAINS: string[];
 
-	// Provider-specific (example: add your own like GITHUB_CLIENT_ID, LINEAR_API_KEY, etc.)
+	// Provider-specific (example: add your own like LINEAR_API_KEY, etc.)
 	PROVIDER_CLIENT_ID?: string;
 	PROVIDER_CLIENT_SECRET?: string;
 	PROVIDER_API_URL?: string;
@@ -102,9 +102,15 @@ function parseAuthStrategy(env: Record<string, unknown>): AuthStrategyType {
 	const explicit = (env.AUTH_STRATEGY as string)?.toLowerCase();
 	if (
 		explicit &&
-		["oauth", "google", "bearer", "api_key", "custom", "none"].includes(
-			explicit,
-		)
+		[
+			"oauth",
+			"google",
+			"github",
+			"bearer",
+			"api_key",
+			"custom",
+			"none",
+		].includes(explicit)
 	) {
 		return explicit as AuthStrategyType;
 	}

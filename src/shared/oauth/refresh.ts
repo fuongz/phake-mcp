@@ -31,16 +31,15 @@ export function buildProviderRefreshConfig(config: {
 	OAUTH_CLIENT_SECRET?: string;
 }): ProviderRefreshConfig | undefined {
 	const isGoogle = config.AUTH_STRATEGY === "google";
+	const isGitHub = config.AUTH_STRATEGY === "github";
 
-	const clientId =
-		config.PROVIDER_CLIENT_ID ||
-		(isGoogle ? config.OAUTH_CLIENT_ID : undefined);
+	const clientId = config.PROVIDER_CLIENT_ID || config.OAUTH_CLIENT_ID;
 	const clientSecret =
-		config.PROVIDER_CLIENT_SECRET ||
-		(isGoogle ? config.OAUTH_CLIENT_SECRET : undefined);
+		config.PROVIDER_CLIENT_SECRET || config.OAUTH_CLIENT_SECRET;
 	const accountsUrl =
 		config.PROVIDER_ACCOUNTS_URL ||
-		(isGoogle ? "https://accounts.google.com" : undefined);
+		(isGoogle ? "https://accounts.google.com" : undefined) ||
+		(isGitHub ? "https://github.com" : undefined);
 
 	if (!clientId || !clientSecret || !accountsUrl) {
 		return undefined;
@@ -52,7 +51,8 @@ export function buildProviderRefreshConfig(config: {
 		accountsUrl,
 		tokenEndpointPath:
 			config.OAUTH_TOKEN_URL ||
-			(isGoogle ? "https://oauth2.googleapis.com/token" : undefined),
+			(isGoogle ? "https://oauth2.googleapis.com/token" : undefined) ||
+			(isGitHub ? "https://github.com/login/oauth/access_token" : undefined),
 	};
 }
 
