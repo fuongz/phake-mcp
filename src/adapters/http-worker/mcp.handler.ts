@@ -240,6 +240,11 @@ async function resolveAuthContext<TEnv extends object = object>(
 		resolvedHeaders,
 		authHeaders: rawHeaders,
 		bindings,
+		getToken: () =>
+			providerToken
+				? { data: providerToken, error: null }
+				: { data: null, error: "No access token" },
+		getUser: async () => ({ data: null, error: "getUser not available" }),
 	};
 }
 
@@ -393,6 +398,7 @@ export async function handleMcpRequest<TEnv extends object = object>(
 			title: config.MCP_TITLE,
 			version: config.MCP_VERSION,
 			instructions: config.MCP_INSTRUCTIONS,
+			providerAccountsUrl: config.PROVIDER_ACCOUNTS_URL,
 		},
 		getSessionState: () => sessionStateMap.get(sessionId),
 		setSessionState: (state) => sessionStateMap.set(sessionId, state),

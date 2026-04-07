@@ -6,6 +6,7 @@
 import { z } from "zod";
 import { buildCapabilities } from "../../runtime/node/capabilities.js";
 import { serverMetadata } from "../../shared/config/metadata.js";
+import { getUser, getUserinfoUrl } from "../oauth/userinfo.js";
 import { executeSharedTool, sharedTools } from "../tools/registry.js";
 import type { ToolContext } from "../tools/types.js";
 import { sharedLogger as logger } from "../utils/logger.js";
@@ -36,6 +37,8 @@ export interface McpServerConfig {
 	title: string;
 	version: string;
 	instructions?: string;
+	/** Provider accounts URL (from config.PROVIDER_ACCOUNTS_URL) */
+	providerAccountsUrl?: string;
 }
 
 /** Session state for MCP connections */
@@ -159,6 +162,19 @@ async function handleToolsCall<TEnv extends object = object>(
 		meta: {
 			progressToken: meta?.progressToken,
 			requestId: requestId !== undefined ? String(requestId) : undefined,
+		},
+		getUser: async () => {
+			const token = ctx.auth.providerToken;
+			if (!token) return { data: null, error: "No access token" };
+			const url = getUserinfoUrl(
+				ctx.auth.authStrategy,
+				ctx.config.providerAccountsUrl,
+			);
+			if (!url)
+				return { data: null, error: "No userinfo endpoint for this provider" };
+			const data = await getUser(token, url);
+			if (!data) return { data: null, error: "Failed to fetch user info" };
+			return { data, error: null };
 		},
 	};
 

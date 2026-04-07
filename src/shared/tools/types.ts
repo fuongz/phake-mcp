@@ -99,6 +99,42 @@ export interface ToolContext<TEnv = object> {
 	 * Type matches the generic TEnv passed to createMCPServer.
 	 */
 	bindings?: TEnv;
+
+	// ─────────────────────────────────────────────────────────────────────────
+	// Helpers
+	// ─────────────────────────────────────────────────────────────────────────
+
+	/**
+	 * Get the access token for external API calls.
+	 *
+	 * @returns Result object with either token or error
+	 *
+	 * @example
+	 * ```typescript
+	 * const { data: token, error } = context.getToken();
+	 * if (error) return { content: [{ type: "text", text: error }], isError: true };
+	 * ```
+	 */
+	getToken(): { data: string | null; error: string | null };
+
+	/**
+	 * Fetch user info from the OAuth provider.
+	 * Works with Google, GitHub, and other OAuth providers.
+	 * Requires authentication (providerToken must be present).
+	 *
+	 * @returns Result object with either data or error
+	 *
+	 * @example
+	 * ```typescript
+	 * const { data, error } = await context.getUser();
+	 * if (error) return { content: [{ type: "text", text: error }], isError: true };
+	 * // data.email, data.name, etc.
+	 * ```
+	 */
+	getUser(): Promise<{
+		data: Record<string, unknown> | null;
+		error: string | null;
+	}>;
 }
 
 /**

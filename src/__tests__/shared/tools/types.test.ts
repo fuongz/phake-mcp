@@ -9,7 +9,11 @@ import {
 } from "../../../shared/tools/types.js";
 
 // Minimal valid context for tests
-const baseContext: ToolContext = { sessionId: "test-session" };
+const baseContext: ToolContext = {
+	sessionId: "test-session",
+	getUser: async () => ({ data: null, error: null }),
+	getToken: () => ({ data: null, error: null }),
+};
 
 // ─────────────────────────────────────────────────────────────────────────────
 // normalizeOutputSchema

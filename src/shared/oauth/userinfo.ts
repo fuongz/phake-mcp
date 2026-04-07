@@ -34,3 +34,30 @@ export const USERINFO_ENDPOINTS = {
 	google: "https://www.googleapis.com/oauth2/v2/userinfo",
 	github: "https://api.github.com/user",
 } as const;
+
+/**
+ * Get the appropriate userinfo URL based on the auth strategy.
+ * Falls back to provider accounts URL if no known endpoint.
+ */
+export function getUserinfoUrl(
+	authStrategy: string | undefined,
+	providerAccountsUrl: string | undefined,
+): string | undefined {
+	switch (authStrategy) {
+		case "google":
+			return USERINFO_ENDPOINTS.google;
+		case "github":
+			return USERINFO_ENDPOINTS.github;
+		case "oauth":
+			// For generic OAuth, try to derive from provider accounts URL
+			if (providerAccountsUrl) {
+				// Common pattern: accounts.example.com -> api.example.com/userinfo
+				return providerAccountsUrl
+					.replace("accounts.", "api.")
+					.replace("/oauth", "/userinfo");
+			}
+			return undefined;
+		default:
+			return undefined;
+	}
+}

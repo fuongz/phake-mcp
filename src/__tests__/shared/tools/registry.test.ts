@@ -9,7 +9,11 @@ import {
 } from "../../../shared/tools/registry.js";
 import type { ToolContext } from "../../../shared/tools/types.js";
 
-const baseContext: ToolContext = { sessionId: "test-session" };
+const baseContext: ToolContext = {
+	sessionId: "test-session",
+	getUser: async () => ({ data: null, error: null }),
+	getToken: () => ({ data: null, error: null }),
+};
 
 // ─────────────────────────────────────────────────────────────────────────────
 // sharedTools / getSharedTool / getSharedToolNames

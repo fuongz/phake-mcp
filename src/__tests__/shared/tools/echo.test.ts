@@ -2,7 +2,11 @@ import { describe, expect, test } from "bun:test";
 import { echoTool } from "../../../shared/tools/echo.js";
 import type { ToolContext } from "../../../shared/tools/types.js";
 
-const ctx: ToolContext = { sessionId: "test" };
+const ctx: ToolContext = {
+	sessionId: "test",
+	getUser: async () => ({ data: null, error: null }),
+	getToken: () => ({ data: null, error: null }),
+};
 
 describe("echoTool", () => {
 	test("has correct name and metadata", () => {
