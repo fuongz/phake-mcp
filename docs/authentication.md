@@ -93,7 +93,7 @@ The `google` strategy simplifies Google OAuth by providing preset endpoints:
 AUTH_STRATEGY=google
 OAUTH_CLIENT_ID=your-google-client-id.apps.googleusercontent.com
 OAUTH_CLIENT_SECRET=GOCSPX-your-secret
-OAUTH_SCOPES=https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive.readonly
+OAUTH_SCOPES=openid email profile
 OAUTH_REDIRECT_URI=https://your-server.com/oauth/provider-callback
 ```
 
@@ -104,7 +104,7 @@ OAUTH_REDIRECT_URI=https://your-server.com/oauth/provider-callback
 | Accounts URL | `https://accounts.google.com` |
 | Authorization URL | `https://accounts.google.com/o/oauth2/v2/auth` |
 | Token URL | `https://oauth2.googleapis.com/token` |
-| Default scopes | `https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive.readonly` |
+| Default scopes | `openid email profile` |
 
 You can override any preset with explicit `OAUTH_*` values.
 
@@ -114,7 +114,7 @@ You can override any preset with explicit `OAUTH_*` values.
 AUTH_STRATEGY=google
 OAUTH_CLIENT_ID=123456789-abc.apps.googleusercontent.com
 OAUTH_CLIENT_SECRET=GOCSPX-your-secret
-OAUTH_SCOPES=https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive.readonly
+OAUTH_SCOPES=openid email profile
 OAUTH_REDIRECT_URI=https://my-mcp.example.com/oauth/provider-callback
 AUTH_ALLOW_DIRECT_BEARER=true
 ```

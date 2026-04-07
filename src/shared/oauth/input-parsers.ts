@@ -125,9 +125,7 @@ export function buildGoogleProviderConfig(
 		clientId: config.PROVIDER_CLIENT_ID || config.OAUTH_CLIENT_ID,
 		clientSecret: config.PROVIDER_CLIENT_SECRET || config.OAUTH_CLIENT_SECRET,
 		accountsUrl: config.PROVIDER_ACCOUNTS_URL || "https://accounts.google.com",
-		oauthScopes:
-			config.OAUTH_SCOPES ||
-			"https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive.readonly",
+		oauthScopes: config.OAUTH_SCOPES || "openid email profile",
 		extraAuthParams: config.OAUTH_EXTRA_AUTH_PARAMS,
 		authorizationEndpointPath:
 			config.OAUTH_AUTHORIZATION_URL ||
