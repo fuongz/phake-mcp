@@ -162,6 +162,7 @@ async function resolveAuthContext(
 	request: Request,
 	tokenStore: TokenStore,
 	config: UnifiedConfig,
+	bindings?: McpHandlerDeps["bindings"],
 ): Promise<ToolContext> {
 	// Extract raw headers
 	const rawHeaders: Record<string, string> = {};
@@ -238,6 +239,7 @@ async function resolveAuthContext(
 		provider,
 		resolvedHeaders,
 		authHeaders: rawHeaders,
+		bindings,
 	};
 }
 
@@ -250,6 +252,7 @@ export interface McpHandlerDeps {
 	sessionStore: SessionStore;
 	config: UnifiedConfig;
 	tools?: import("../../shared/tools/types.js").SharedToolDefinition[];
+	bindings?: Record<string, unknown>;
 }
 
 /**
@@ -342,7 +345,12 @@ export async function handleMcpRequest(
 	}
 
 	// Resolve auth context
-	const authContext = await resolveAuthContext(request, tokenStore, config);
+	const authContext = await resolveAuthContext(
+		request,
+		tokenStore,
+		config,
+		deps.bindings,
+	);
 	authContext.sessionId = sessionId;
 
 	// Create session record AFTER auth passes (prevents orphans)

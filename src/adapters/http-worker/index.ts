@@ -35,7 +35,7 @@ export interface WorkerEnv {
 	TOKENS?: KVNamespace;
 	/** Base64url-encoded 32-byte key for AES-256-GCM encryption */
 	RS_TOKENS_ENC_KEY?: string;
-	/** All other env vars */
+	/** Cloudflare bindings (AI, Vectorize, D1, R2, KV, etc.) - passed via generic type */
 	[key: string]: unknown;
 }
 
@@ -54,6 +54,7 @@ export interface RouterContext {
 	sessionStore: SessionStore;
 	config: UnifiedConfig;
 	tools?: import("../../shared/tools/types.js").SharedToolDefinition[];
+	bindings?: Record<string, unknown>;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -142,7 +143,7 @@ export function createWorkerRouter(ctx: RouterContext): {
 	fetch: (request: Request) => Promise<Response>;
 } {
 	const router = Router();
-	const { tokenStore, sessionStore, config, tools } = ctx;
+	const { tokenStore, sessionStore, config, tools, bindings } = ctx;
 
 	// CORS preflight
 	router.options("*", () => corsPreflightResponse());
@@ -157,11 +158,23 @@ export function createWorkerRouter(ctx: RouterContext): {
 	router.get(MCP_ENDPOINT_PATH, () => handleMcpGet());
 
 	router.post(MCP_ENDPOINT_PATH, (request: Request) =>
-		handleMcpRequest(request, { tokenStore, sessionStore, config, tools }),
+		handleMcpRequest(request, {
+			tokenStore,
+			sessionStore,
+			config,
+			tools,
+			bindings,
+		}),
 	);
 
 	router.delete(MCP_ENDPOINT_PATH, (request: Request) =>
-		handleMcpDelete(request, { tokenStore, sessionStore, config, tools }),
+		handleMcpDelete(request, {
+			tokenStore,
+			sessionStore,
+			config,
+			tools,
+			bindings,
+		}),
 	);
 
 	// Health check

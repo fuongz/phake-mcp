@@ -6,14 +6,20 @@
 import {
 	createWorkerRouter,
 	initializeWorkerStorage,
+	type RouterContext,
 	shimProcessEnv,
 	type WorkerEnv,
 } from "./adapters/http-worker/index.js";
 import { parseConfig } from "./shared/config/env.js";
 import { withCors } from "./shared/http/cors.js";
-import type { SharedToolDefinition } from "./shared/tools/types.js";
+import type {
+	SharedToolDefinition,
+	ToolContext,
+} from "./shared/tools/types.js";
 
-export interface MCPServerOptions {
+export interface MCPServerOptions<
+	_TBindings extends Record<string, unknown> = Record<string, unknown>,
+> {
 	/** Array of tools to register */
 	tools?: SharedToolDefinition<any>[];
 }
@@ -24,14 +30,25 @@ export interface MCPServer {
 
 /**
  * Create an MCP server instance for Cloudflare Workers.
- * @param {MCPServerOptions} options - Configuration options
- * @param {SharedToolDefinition<any>[]} [options.tools] - Array of tools to register
- * @returns {MCPServer} - MCP server instance
+ * @example
+ * ```typescript
+ * interface MyEnv {
+ *   AI: unknown;
+ *   VECTORIZE: unknown;
+ *   MY_BUCKET: unknown;
+ * }
+ *
+ * const server = createMCPServer<MyEnv>({
+ *   tools: [myTool],
+ * });
+ * ```
  */
-export function createMCPServer(options: MCPServerOptions): MCPServer {
+export function createMCPServer<
+	TBindings extends Record<string, unknown> = Record<string, unknown>,
+>(options: MCPServerOptions<TBindings>): MCPServer {
 	return {
 		async fetch(request: Request, env: unknown): Promise<Response> {
-			const workerEnv = env as WorkerEnv;
+			const workerEnv = env as WorkerEnv & TBindings;
 			shimProcessEnv(workerEnv);
 			const config = parseConfig(workerEnv);
 			const storage = initializeWorkerStorage(workerEnv, config);
@@ -42,11 +59,22 @@ export function createMCPServer(options: MCPServerOptions): MCPServer {
 					}),
 				);
 			}
+
+			// Extract Cloudflare bindings from worker env
+			const bindings: ToolContext["bindings"] = {} as ToolContext["bindings"];
+			for (const key of Object.keys(workerEnv)) {
+				if (key !== "TOKENS" && key !== "RS_TOKENS_ENC_KEY") {
+					(bindings as Record<string, unknown>)[key] =
+						workerEnv[key as keyof TBindings];
+				}
+			}
+
 			const router = createWorkerRouter({
 				tokenStore: storage.tokenStore,
 				sessionStore: storage.sessionStore,
 				config,
 				tools: options.tools,
+				bindings: bindings as RouterContext["bindings"],
 			});
 			return router.fetch(request);
 		},

@@ -88,6 +88,16 @@ export interface ToolContext {
 	 * @deprecated Use `resolvedHeaders` for API calls
 	 */
 	authHeaders?: Record<string, string>;
+
+	// ─────────────────────────────────────────────────────────────────────────
+	// Cloudflare Bindings (Worker only)
+	// ─────────────────────────────────────────────────────────────────────────
+
+	/**
+	 * Cloudflare worker bindings (AI, Vectorize, D1, R2, etc.)
+	 * Only available when running in Cloudflare Workers.
+	 */
+	bindings?: Record<string, unknown>;
 }
 
 /**
