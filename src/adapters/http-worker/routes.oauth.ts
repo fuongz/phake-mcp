@@ -96,7 +96,11 @@ export function attachOAuthRoutes(
 				return textError("invalid_callback: missing code or state");
 			}
 
-			if (!config.PROVIDER_CLIENT_ID || !config.PROVIDER_CLIENT_SECRET) {
+			const clientId = config.PROVIDER_CLIENT_ID || config.OAUTH_CLIENT_ID;
+			const clientSecret =
+				config.PROVIDER_CLIENT_SECRET || config.OAUTH_CLIENT_SECRET;
+
+			if (!clientId || !clientSecret) {
 				logger.error("oauth_workers", {
 					message: "Missing provider credentials",
 				});

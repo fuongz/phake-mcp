@@ -368,7 +368,7 @@ export async function handleProviderCallback(
 	);
 
 	if (!providerConfig.clientSecret) {
-		throw new Error("Server misconfigured: PROVIDER_CLIENT_SECRET is not set");
+		throw new Error("Server misconfigured: OAuth client secret is not set");
 	}
 	// Use client_secret_post (credentials in body) — works reliably with Google
 	const clientAuth = oauth.ClientSecretPost(providerConfig.clientSecret);

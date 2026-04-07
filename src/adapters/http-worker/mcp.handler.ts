@@ -140,16 +140,16 @@ function buildStaticAuthHeaders(config: UnifiedConfig): Record<string, string> {
 function buildProviderRefreshConfig(
 	config: UnifiedConfig,
 ): ProviderRefreshConfig | undefined {
-	if (
-		!config.PROVIDER_CLIENT_ID ||
-		!config.PROVIDER_CLIENT_SECRET ||
-		!config.PROVIDER_ACCOUNTS_URL
-	) {
+	const clientId = config.PROVIDER_CLIENT_ID || config.OAUTH_CLIENT_ID;
+	const clientSecret =
+		config.PROVIDER_CLIENT_SECRET || config.OAUTH_CLIENT_SECRET;
+
+	if (!clientId || !clientSecret || !config.PROVIDER_ACCOUNTS_URL) {
 		return undefined;
 	}
 	return {
-		clientId: config.PROVIDER_CLIENT_ID,
-		clientSecret: config.PROVIDER_CLIENT_SECRET,
+		clientId,
+		clientSecret,
 		accountsUrl: config.PROVIDER_ACCOUNTS_URL,
 	};
 }

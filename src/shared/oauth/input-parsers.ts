@@ -105,8 +105,8 @@ export function buildProviderConfig(config: UnifiedConfig): ProviderConfig {
 	// Pass full URLs directly — new URL(absoluteUrl, base) ignores the base,
 	// so providers with different hosts for auth vs token (e.g. Google) work correctly.
 	return {
-		clientId: config.PROVIDER_CLIENT_ID,
-		clientSecret: config.PROVIDER_CLIENT_SECRET,
+		clientId: config.PROVIDER_CLIENT_ID || config.OAUTH_CLIENT_ID,
+		clientSecret: config.PROVIDER_CLIENT_SECRET || config.OAUTH_CLIENT_SECRET,
 		accountsUrl: config.PROVIDER_ACCOUNTS_URL || "https://provider.example.com",
 		oauthScopes: config.OAUTH_SCOPES,
 		extraAuthParams: config.OAUTH_EXTRA_AUTH_PARAMS,
