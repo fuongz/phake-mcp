@@ -52,6 +52,25 @@ These credentials map RS tokens to upstream provider tokens:
 | `OAUTH_AUTHORIZATION_URL` | No | Override authorization endpoint |
 | `OAUTH_TOKEN_URL` | No | Override token endpoint |
 
+### OAuth Callback URLs
+
+The OAuth flow involves two callback endpoints:
+
+| Endpoint | Purpose |
+|----------|---------|
+| `/oauth/provider-callback` | Provider redirects here after user authorizes (server exchanges code for tokens) |
+| `/oauth/callback` | Success page shown to user after authentication completes |
+
+When creating an OAuth app with Google/GitHub, use `/oauth/provider-callback` as the **Authorization callback URL**.
+
+The flow works as follows:
+```
+1. User initiates auth at /authorize
+2. Redirect to provider (Google/GitHub) with redirect_uri=/oauth/provider-callback
+3. Provider redirects back to /oauth/provider-callback (server exchanges code for tokens)
+4. Server redirects to /oauth/callback with RS code (success page)
+```
+
 ## Google Configuration
 
 The `google` strategy simplifies Google OAuth by providing preset endpoints:
@@ -64,8 +83,8 @@ The `google` strategy simplifies Google OAuth by providing preset endpoints:
 4. Click **Create Credentials** > **OAuth client ID**
 5. For Application type, select **Web application**
 6. Configure the authorized redirect URI:
-   - For production: `https://your-domain.com/oauth/callback`
-   - For local development: `http://localhost:3000/oauth/callback`
+   - For production: `https://your-domain.com/oauth/provider-callback`
+   - For local development: `http://localhost:3000/oauth/provider-callback`
 7. Copy the **Client ID** and **Client Secret**
 
 ### Environment Setup
@@ -75,7 +94,7 @@ AUTH_STRATEGY=google
 OAUTH_CLIENT_ID=your-google-client-id.apps.googleusercontent.com
 OAUTH_CLIENT_SECRET=GOCSPX-your-secret
 OAUTH_SCOPES=https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive.readonly
-OAUTH_REDIRECT_URI=https://your-server.com/oauth/callback
+OAUTH_REDIRECT_URI=https://your-server.com/oauth/provider-callback
 ```
 
 ### Preset Values
@@ -96,7 +115,7 @@ AUTH_STRATEGY=google
 OAUTH_CLIENT_ID=123456789-abc.apps.googleusercontent.com
 OAUTH_CLIENT_SECRET=GOCSPX-your-secret
 OAUTH_SCOPES=https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive.readonly
-OAUTH_REDIRECT_URI=https://my-mcp.example.com/oauth/callback
+OAUTH_REDIRECT_URI=https://my-mcp.example.com/oauth/provider-callback
 AUTH_ALLOW_DIRECT_BEARER=true
 ```
 
@@ -112,8 +131,8 @@ The `github` strategy provides preset endpoints for GitHub OAuth:
    - **Application name**: Choose a descriptive name (e.g., "My MCP Server")
    - **Homepage URL**: Your server's homepage URL (e.g., `https://my-mcp.example.com`)
    - **Authorization callback URL**: 
-     - For production: `https://your-domain.com/oauth/callback`
-     - For local development: `http://localhost:3000/oauth/callback`
+     - For production: `https://your-domain.com/oauth/provider-callback`
+     - For local development: `http://localhost:3000/oauth/provider-callback`
 4. Click **Register application**
 5. On the next page, click **Generate a new client secret**
 6. Copy the **Client ID** and **Client Secret**
@@ -125,7 +144,7 @@ AUTH_STRATEGY=github
 OAUTH_CLIENT_ID=your-github-client-id
 OAUTH_CLIENT_SECRET=your-github-client-secret
 OAUTH_SCOPES=read:user,repo
-OAUTH_REDIRECT_URI=https://your-server.com/oauth/callback
+OAUTH_REDIRECT_URI=https://your-server.com/oauth/provider-callback
 ```
 
 ### Preset Values
@@ -157,7 +176,7 @@ AUTH_STRATEGY=github
 OAUTH_CLIENT_ID=Iv1.xxxxxxxx
 OAUTH_CLIENT_SECRET=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 OAUTH_SCOPES=read:user,repo
-OAUTH_REDIRECT_URI=https://my-mcp.example.com/oauth/callback
+OAUTH_REDIRECT_URI=https://my-mcp.example.com/oauth/provider-callback
 ```
 
 ## Bearer Token
