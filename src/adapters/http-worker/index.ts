@@ -49,12 +49,15 @@ export interface KVNamespace {
 	delete(key: string): Promise<void>;
 }
 
-export interface RouterContext {
+export interface RouterContext<TEnv extends object = object> {
 	tokenStore: TokenStore;
 	sessionStore: SessionStore;
 	config: UnifiedConfig;
-	tools?: import("../../shared/tools/types.js").SharedToolDefinition[];
-	bindings?: Record<string, unknown>;
+	tools?: import("../../shared/tools/types.js").SharedToolDefinition<
+		any,
+		TEnv
+	>[];
+	bindings?: TEnv;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -139,7 +142,9 @@ const MCP_ENDPOINT_PATH = "/mcp";
 /**
  * Create a configured router for the worker.
  */
-export function createWorkerRouter(ctx: RouterContext): {
+export function createWorkerRouter<TEnv extends object = object>(
+	ctx: RouterContext<TEnv>,
+): {
 	fetch: (request: Request) => Promise<Response>;
 } {
 	const router = Router();

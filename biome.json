@@ -15,7 +15,9 @@
 			"!**/.vscode",
 			"!**/.github",
 			"!**/package.json",
-			"!**/bun.lock"
+			"!**/bun.lock",
+			"!**/examples",
+			"!**/templates"
 		]
 	},
 	"formatter": {

@@ -158,12 +158,12 @@ function buildProviderRefreshConfig(
  * Resolve auth context from request and config.
  * Includes proactive token refresh for OAuth strategy.
  */
-async function resolveAuthContext(
+async function resolveAuthContext<TEnv extends object = object>(
 	request: Request,
 	tokenStore: TokenStore,
 	config: UnifiedConfig,
-	bindings?: McpHandlerDeps["bindings"],
-): Promise<ToolContext> {
+	bindings?: TEnv,
+): Promise<ToolContext<TEnv>> {
 	// Extract raw headers
 	const rawHeaders: Record<string, string> = {};
 	request.headers.forEach((value, key) => {
@@ -247,20 +247,23 @@ async function resolveAuthContext(
 // Request Handler
 // ─────────────────────────────────────────────────────────────────────────────
 
-export interface McpHandlerDeps {
+export interface McpHandlerDeps<TEnv extends object = object> {
 	tokenStore: TokenStore;
 	sessionStore: SessionStore;
 	config: UnifiedConfig;
-	tools?: import("../../shared/tools/types.js").SharedToolDefinition[];
-	bindings?: Record<string, unknown>;
+	tools?: import("../../shared/tools/types.js").SharedToolDefinition<
+		any,
+		TEnv
+	>[];
+	bindings?: TEnv;
 }
 
 /**
  * Handle MCP POST request.
  */
-export async function handleMcpRequest(
+export async function handleMcpRequest<TEnv extends object = object>(
 	request: Request,
-	deps: McpHandlerDeps,
+	deps: McpHandlerDeps<TEnv>,
 ): Promise<Response> {
 	const { tokenStore, sessionStore, config } = deps;
 
@@ -383,7 +386,7 @@ export async function handleMcpRequest(
 	const cancellationRegistry = getCancellationRegistry(sessionId);
 
 	// Build dispatch context
-	const dispatchContext: McpDispatchContext = {
+	const dispatchContext: McpDispatchContext<TEnv> = {
 		sessionId,
 		auth: authContext,
 		config: {
@@ -429,9 +432,9 @@ export function handleMcpGet(): Response {
 /**
  * Handle MCP DELETE request (session termination).
  */
-export async function handleMcpDelete(
+export async function handleMcpDelete<TEnv extends object = object>(
 	request: Request,
-	deps: McpHandlerDeps,
+	deps: McpHandlerDeps<TEnv>,
 ): Promise<Response> {
 	const { sessionStore } = deps;
 	const sessionId = request.headers.get("Mcp-Session-Id")?.trim();

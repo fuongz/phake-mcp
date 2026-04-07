@@ -49,16 +49,16 @@ export interface McpSessionState {
 export type CancellationRegistry = Map<string | number, AbortController>;
 
 /** Context for MCP request handling */
-export interface McpDispatchContext {
+export interface McpDispatchContext<TEnv extends object = object> {
 	sessionId: string;
-	auth: ToolContext;
+	auth: ToolContext<TEnv>;
 	config: McpServerConfig;
 	getSessionState: () => McpSessionState | undefined;
 	setSessionState: (state: McpSessionState) => void;
 	/** Registry for tracking in-flight requests that can be cancelled */
 	cancellationRegistry?: CancellationRegistry;
 	/** Custom tools (if not provided, uses sharedTools) */
-	tools?: import("../tools/types.js").SharedToolDefinition[];
+	tools?: import("../tools/types.js").SharedToolDefinition<any, TEnv>[];
 }
 
 /** JSON-RPC response */
@@ -71,9 +71,9 @@ export interface JsonRpcResult {
 // Method Handlers
 // ─────────────────────────────────────────────────────────────────────────────
 
-async function handleInitialize(
+async function handleInitialize<TEnv extends object = object>(
 	params: Record<string, unknown> | undefined,
-	ctx: McpDispatchContext,
+	ctx: McpDispatchContext<TEnv>,
 ): Promise<JsonRpcResult> {
 	const clientInfo = params?.clientInfo as
 		| { name: string; version: string }
@@ -115,8 +115,8 @@ async function handleInitialize(
 	};
 }
 
-async function handleToolsList(
-	ctx: McpDispatchContext,
+async function handleToolsList<TEnv extends object = object>(
+	ctx: McpDispatchContext<TEnv>,
 ): Promise<JsonRpcResult> {
 	const tools = (ctx.tools ?? sharedTools).map((tool) => ({
 		name: tool.name,
@@ -136,9 +136,9 @@ async function handleToolsList(
 	return { result: { tools } };
 }
 
-async function handleToolsCall(
+async function handleToolsCall<TEnv extends object = object>(
 	params: Record<string, unknown> | undefined,
-	ctx: McpDispatchContext,
+	ctx: McpDispatchContext<TEnv>,
 	requestId?: string | number,
 ): Promise<JsonRpcResult> {
 	const toolName = String(params?.name || "");
@@ -152,7 +152,7 @@ async function handleToolsCall(
 	}
 
 	// Build tool context with abort signal
-	const toolContext: ToolContext = {
+	const toolContext: ToolContext<TEnv> = {
 		...ctx.auth,
 		sessionId: ctx.sessionId,
 		signal: abortController.signal,
@@ -313,10 +313,10 @@ export function getLogLevel(): string {
  * @param requestId - Optional request ID for cancellation tracking
  * @returns JSON-RPC result or error
  */
-export async function dispatchMcpMethod(
+export async function dispatchMcpMethod<TEnv extends object = object>(
 	method: string | undefined,
 	params: Record<string, unknown> | undefined,
-	ctx: McpDispatchContext,
+	ctx: McpDispatchContext<TEnv>,
 	requestId?: string | number,
 ): Promise<JsonRpcResult> {
 	if (!method) {
@@ -378,10 +378,10 @@ export interface CancelledNotificationParams {
  * @param ctx - Dispatch context
  * @returns true if handled, false if unknown
  */
-export function handleMcpNotification(
+export function handleMcpNotification<TEnv extends object = object>(
 	method: string,
 	params: Record<string, unknown> | undefined,
-	ctx: McpDispatchContext,
+	ctx: McpDispatchContext<TEnv>,
 ): boolean {
 	if (method === "notifications/initialized") {
 		const session = ctx.getSessionState();

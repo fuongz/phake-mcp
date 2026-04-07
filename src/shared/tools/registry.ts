@@ -136,11 +136,11 @@ export function getSharedToolNames(): string[] {
  * (unless isError is true). The SDK validates this automatically for Node,
  * and we replicate that behavior here for Workers.
  */
-export async function executeSharedTool(
+export async function executeSharedTool<TEnv extends object = object>(
 	name: string,
 	args: Record<string, unknown>,
-	context: ToolContext,
-	tools?: SharedToolDefinition[],
+	context: ToolContext<TEnv>,
+	tools?: SharedToolDefinition<any, TEnv>[],
 ): Promise<ToolResult> {
 	const toolList = tools ?? sharedTools;
 	const tool = toolList.find((t) => t.name === name);

@@ -16,7 +16,7 @@ export type { AuthStrategy } from "../types/auth.js";
  * Context passed to every tool handler.
  * Provides access to auth, session, and cancellation.
  */
-export interface ToolContext {
+export interface ToolContext<TEnv = object> {
 	/** Current MCP session ID */
 	sessionId: string;
 	/** Abort signal for cancellation support */
@@ -96,17 +96,18 @@ export interface ToolContext {
 	/**
 	 * Cloudflare worker bindings (AI, Vectorize, D1, R2, etc.)
 	 * Only available when running in Cloudflare Workers.
+	 * Type matches the generic TEnv passed to createMCPServer.
 	 */
-	bindings?: Record<string, unknown>;
+	bindings?: TEnv;
 }
 
 /**
  * Type guard to assert providerToken is present.
  * Use this when you know auth is required (e.g., tools with requiresAuth: true).
  */
-export function assertProviderToken(
-	context: ToolContext,
-): asserts context is ToolContext & { providerToken: string } {
+export function assertProviderToken<TEnv extends object = object>(
+	context: ToolContext<TEnv>,
+): asserts context is ToolContext<TEnv> & { providerToken: string } {
 	if (!context.providerToken) {
 		throw new Error("Authentication required");
 	}
@@ -145,6 +146,7 @@ export interface AuthenticatedToolContext extends ToolContext {
  */
 export interface SharedToolDefinition<
 	TShape extends ZodRawShape = ZodRawShape,
+	TEnv extends object = object,
 > {
 	/** Unique tool name (lowercase, underscores allowed) */
 	name: string;
@@ -159,7 +161,7 @@ export interface SharedToolDefinition<
 	/** Tool handler function */
 	handler: (
 		args: z.infer<ZodObject<TShape>>,
-		context: ToolContext,
+		context: ToolContext<TEnv>,
 	) => Promise<ToolResult>;
 	/**
 	 * Whether this tool requires authentication.
@@ -216,6 +218,7 @@ export function toolFail<T extends Record<string, unknown>>(
 type ToolDefinitionInput<
 	TShape extends ZodRawShape,
 	OShape extends ZodRawShape = ZodRawShape,
+	TEnv extends object = object,
 > = {
 	name: string;
 	title?: string;
@@ -224,7 +227,7 @@ type ToolDefinitionInput<
 	outputSchema?: OShape | ZodObject<OShape>;
 	handler: (
 		args: z.infer<ZodObject<TShape>>,
-		context: ToolContext,
+		context: ToolContext<TEnv>,
 	) => Promise<ToolResult | Record<string, unknown>>;
 	requiresAuth?: boolean;
 	annotations?: SharedToolDefinition["annotations"];
@@ -255,7 +258,10 @@ function isToolResult(value: unknown): value is ToolResult {
 export function defineTool<
 	TShape extends ZodRawShape,
 	OShape extends ZodRawShape = ZodRawShape,
->(def: ToolDefinitionInput<TShape, OShape>): SharedToolDefinition<TShape> {
+	TEnv extends object = object,
+>(
+	def: ToolDefinitionInput<TShape, OShape, TEnv>,
+): SharedToolDefinition<TShape, TEnv> {
 	const {
 		outputSchema: rawOutputSchema,
 		meta,
@@ -287,4 +293,25 @@ export function defineTool<
 			};
 		},
 	};
+}
+
+/**
+ * Create a typed array of tools for use with createMCPServer.
+ * This helper ensures all tools are typed with the same TEnv without
+ * requiring explicit type annotations on each handler.
+ *
+ * @example
+ * ```typescript
+ * const tools = createTools<Cloudflare.Env>([
+ *   defineTool({ ... }),
+ *   defineTool({ ... }),
+ * ]);
+ *
+ * const server = createMCPServer<Cloudflare.Env>({ tools });
+ * ```
+ */
+export function createTools<TEnv extends object>(
+	tools: Array<SharedToolDefinition<any, TEnv>>,
+): Array<SharedToolDefinition<any, TEnv>> {
+	return tools;
 }

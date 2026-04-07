@@ -6,22 +6,16 @@
 import {
 	createWorkerRouter,
 	initializeWorkerStorage,
-	type RouterContext,
 	shimProcessEnv,
 	type WorkerEnv,
 } from "./adapters/http-worker/index.js";
 import { parseConfig } from "./shared/config/env.js";
 import { withCors } from "./shared/http/cors.js";
-import type {
-	SharedToolDefinition,
-	ToolContext,
-} from "./shared/tools/types.js";
+import type { SharedToolDefinition } from "./shared/tools/types.js";
 
-export interface MCPServerOptions<
-	_TBindings extends Record<string, unknown> = Record<string, unknown>,
-> {
+export interface MCPServerOptions<TEnv extends object = object> {
 	/** Array of tools to register */
-	tools?: SharedToolDefinition<any>[];
+	tools?: SharedToolDefinition<any, TEnv>[];
 }
 
 export interface MCPServer {
@@ -43,12 +37,12 @@ export interface MCPServer {
  * });
  * ```
  */
-export function createMCPServer<
-	TBindings extends Record<string, unknown> = Record<string, unknown>,
->(options: MCPServerOptions<TBindings>): MCPServer {
+export function createMCPServer<TEnv extends object = object>(
+	options: MCPServerOptions<TEnv>,
+): MCPServer {
 	return {
 		async fetch(request: Request, env: unknown): Promise<Response> {
-			const workerEnv = env as WorkerEnv & TBindings;
+			const workerEnv = env as WorkerEnv & TEnv;
 			shimProcessEnv(workerEnv);
 			const config = parseConfig(workerEnv);
 			const storage = initializeWorkerStorage(workerEnv, config);
@@ -60,21 +54,15 @@ export function createMCPServer<
 				);
 			}
 
-			// Extract Cloudflare bindings from worker env
-			const bindings: ToolContext["bindings"] = {} as ToolContext["bindings"];
-			for (const key of Object.keys(workerEnv)) {
-				if (key !== "TOKENS" && key !== "RS_TOKENS_ENC_KEY") {
-					(bindings as Record<string, unknown>)[key] =
-						workerEnv[key as keyof TBindings];
-				}
-			}
+			// Extract Cloudflare bindings from worker env (as TEnv type)
+			const bindings: TEnv = workerEnv as TEnv;
 
-			const router = createWorkerRouter({
+			const router = createWorkerRouter<TEnv>({
 				tokenStore: storage.tokenStore,
 				sessionStore: storage.sessionStore,
 				config,
-				tools: options.tools,
-				bindings: bindings as RouterContext["bindings"],
+				tools: options.tools as any,
+				bindings,
 			});
 			return router.fetch(request);
 		},
