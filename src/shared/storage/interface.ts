@@ -6,6 +6,8 @@ export type ProviderTokens = {
 	refresh_token?: string;
 	expires_at?: number;
 	scopes?: string[];
+	/** ID token claims from provider (e.g., email, name from Google) */
+	id_token_claims?: Record<string, unknown>;
 };
 
 export type RsRecord = {

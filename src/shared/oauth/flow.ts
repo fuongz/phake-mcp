@@ -1,6 +1,7 @@
 // Core OAuth flow logic using oauth4webapi
 // Provider-agnostic version from Spotify MCP
 
+import * as jose from "jose";
 import * as oauth from "oauth4webapi";
 import type { ProviderTokens, TokenStore } from "../storage/interface.js";
 import {
@@ -404,6 +405,18 @@ export async function handleProviderCallback(
 			throw new Error("provider_no_token");
 		}
 
+		// Decode id_token if present (contains user info like email)
+		let idTokenClaims: Record<string, unknown> | undefined;
+		if (result.id_token) {
+			try {
+				idTokenClaims = jose.decodeJwt(result.id_token);
+			} catch {
+				logger.warning("oauth_callback", {
+					message: "Failed to decode id_token",
+				});
+			}
+		}
+
 		const expiresIn = result.expires_in ?? 3600;
 		const expiresAt = Date.now() + expiresIn * 1000;
 		const scopes = (result.scope || "").split(/\s+/).filter(Boolean);
@@ -413,6 +426,7 @@ export async function handleProviderCallback(
 			refresh_token: result.refresh_token,
 			expires_at: expiresAt,
 			scopes,
+			id_token_claims: idTokenClaims,
 		};
 
 		logger.info("oauth_callback", {

@@ -19,6 +19,8 @@ export interface ProviderInfo {
 	refreshToken?: string;
 	expiresAt?: number;
 	scopes?: string[];
+	/** ID token claims from provider (e.g., email, name from Google) */
+	idTokenClaims?: Record<string, unknown>;
 }
 
 /**
@@ -31,6 +33,7 @@ export function toProviderInfo(tokens: ProviderTokens): ProviderInfo {
 		refreshToken: tokens.refresh_token,
 		expiresAt: tokens.expires_at,
 		scopes: tokens.scopes,
+		idTokenClaims: tokens.id_token_claims,
 	};
 }
 
@@ -44,5 +47,6 @@ export function toProviderTokens(info: ProviderInfo): ProviderTokens {
 		refresh_token: info.refreshToken,
 		expires_at: info.expiresAt,
 		scopes: info.scopes,
+		id_token_claims: info.idTokenClaims,
 	};
 }
