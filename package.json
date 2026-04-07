@@ -1,6 +1,6 @@
 {
 	"name": "@phake/mcp",
-	"version": "0.3.2",
+	"version": "0.3.3",
 	"repository": {
 		"type": "git",
 		"url": "https://github.com/fuongz/phake-mcp"
@@ -38,6 +38,7 @@
 	},
 	"dependencies": {
 		"@modelcontextprotocol/sdk": "^1.29.0",
+		"@phake/mcp": ".",
 		"itty-router": "^5.0.23",
 		"jose": "^6.2.2",
 		"oauth4webapi": "^3.8.5",
