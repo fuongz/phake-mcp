@@ -231,45 +231,45 @@ const tool = defineTool({
 | Property | Type | Description |
 |----------|------|-------------|
 | `sessionId` | string | Current MCP session ID |
-| `providerToken` | string \| undefined | Access token for external API calls |
+| `providerToken` | string \| undefined | Access token for external API calls (deprecated, use `getToken()`) |
 | `resolvedHeaders` | Record<string, string> | Ready-to-use auth headers |
 | `authStrategy` | AuthStrategy | Active auth strategy |
 | `provider` | ProviderInfo \| undefined | Full provider token info (OAuth only) |
 | `signal` | AbortSignal | Cancellation support |
 | `bindings` | TEnv \| undefined | Cloudflare worker bindings (see [Cloudflare Bindings](#cloudflare-bindings)) |
+| `getToken()` | `() => { data: string \| null, error: string \| null }` | Get access token with error handling |
+| `getUser()` | `Promise<{ data: Record<string, unknown> \| null, error: string \| null }>` | Fetch user info from OAuth provider |
 
 ## Getting User Info (OAuth)
 
-When using OAuth authentication, you may need to fetch the user's profile information (email, name, etc.) from the provider. @phake/mcp provides utilities for this:
+When using OAuth authentication, use `context.getUser()` to fetch the user's profile information (email, name, etc.):
 
-### Using getUser Helper
+### Using getUser()
 
 ```typescript
-import { getUser, USERINFO_ENDPOINTS } from "@phake/mcp";
-
 const tool = defineTool({
   name: "get_profile",
   requiresAuth: true,
   handler: async (args, context) => {
-    const accessToken = context.providerToken;
-    if (!accessToken) {
-      return { content: [{ type: "text", text: "Not authenticated" }], isError: true };
+    // Get token with error handling
+    const { data: token, error: tokenError } = context.getToken();
+    if (tokenError || !token) {
+      return { content: [{ type: "text", text: tokenError }], isError: true };
     }
 
-    // Fetch user info from provider
-    const userinfo = await getUser(accessToken, USERINFO_ENDPOINTS.google);
-    
-    if (!userinfo) {
-      return { content: [{ type: "text", text: "Failed to fetch user info" }], isError: true };
+    // Get user info with error handling
+    const { data, error } = await context.getUser();
+    if (error || !data) {
+      return { content: [{ type: "text", text: error }], isError: true };
     }
 
     return {
       content: [{
         type: "text",
         text: JSON.stringify({
-          email: userinfo.email,
-          name: userinfo.name,
-          id: userinfo.id,
+          email: data.email,
+          name: data.name,
+          id: data.id,
         })
       }]
     };
@@ -277,14 +277,15 @@ const tool = defineTool({
 });
 ```
 
-### Available Endpoints
+### Provider Endpoints
 
-```typescript
-import { USERINFO_ENDPOINTS } from "@phake/mcp";
+The `getUser()` method automatically detects the provider based on `AUTH_STRATEGY`:
 
-USERINFO_ENDPOINTS.google  // "https://www.googleapis.com/oauth2/v2/userinfo"
-USERINFO_ENDPOINTS.github  // "https://api.github.com/user"
-```
+| Strategy | Endpoint |
+|----------|----------|
+| `google` | `https://www.googleapis.com/oauth2/v2/userinfo` |
+| `github` | `https://api.github.com/user` |
+| `oauth` | Derived from `PROVIDER_ACCOUNTS_URL` |
 
 ### ProviderInfo Structure
 

@@ -195,39 +195,39 @@ const server = createMCPServer<Env>({
 
 ### Getting User Info (OAuth)
 
-Fetch user profile from OAuth providers:
+Fetch user profile from OAuth providers using `context.getUser()`:
 
 ```typescript
-import { getUser, USERINFO_ENDPOINTS } from "@phake/mcp";
-
 const userTool = defineTool({
   name: "get_user_info",
   requiresAuth: true,
   inputSchema: z.object({}),
   handler: async (_, context) => {
-    const accessToken = context.providerToken;
-    if (!accessToken) {
-      return { content: [{ type: "text", text: "Not authenticated" }], isError: true };
+    // Get token with error handling
+    const { data: token, error: tokenError } = context.getToken();
+    if (tokenError || !token) {
+      return { content: [{ type: "text", text: tokenError }], isError: true };
     }
 
-    const userinfo = await getUser(accessToken, USERINFO_ENDPOINTS.google);
-    if (!userinfo) {
-      return { content: [{ type: "text", text: "Failed to fetch user" }], isError: true };
+    // Get user info with error handling
+    const { data, error } = await context.getUser();
+    if (error || !data) {
+      return { content: [{ type: "text", text: error }], isError: true };
     }
 
     return {
       content: [{
         type: "text",
-        text: JSON.stringify({ email: userinfo.email, name: userinfo.name })
+        text: JSON.stringify({ email: data.email, name: data.name })
       }]
     };
   },
 });
 ```
 
-Available endpoints:
-- `USERINFO_ENDPOINTS.google` - `"https://www.googleapis.com/oauth2/v2/userinfo"`
-- `USERINFO_ENDPOINTS.github` - `"https://api.github.com/user"`
+The `getUser()` method automatically detects the provider based on `AUTH_STRATEGY`:
+- `google` → `https://www.googleapis.com/oauth2/v2/userinfo`
+- `github` → `https://api.github.com/user`
 
 ### Authentication Strategies
 
