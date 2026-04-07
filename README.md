@@ -39,6 +39,18 @@ bun add @phake/mcp
 npm install @phake/mcp
 ```
 
+## Why @phake/mcp?
+
+> Production-ready MCP server framework built on official SDK
+
+- **Multiple auth strategies**: OAuth 2.1, Google preset, Bearer, API Key, Custom headers
+- **Encrypted token storage**: AES-256-GCM at rest + proactive refresh
+- **Cloudflare Workers native**: KV storage, memory fallback, zero config
+- **Production-ready**: CIMD validation, OAuth discovery, DNS rebinding protection
+- **Quick scaffold**: `bun create @phake/mcp` to get started
+
+See [Comparison Guide](./docs/comparison.md) for full feature comparison with official SDK.
+
 ## Quick Start (Scaffold)
 
 Scaffold a new MCP server with one command:
@@ -245,16 +257,16 @@ handler: async (_args, context) => {
 
 ### Authentication Strategies
 
-Set `AUTH_STRATEGY` in your environment (or let it be inferred from which keys are present):
+See [Authentication Guide](./docs/authentication.md) for detailed configuration.
 
-| Strategy | Description | Required env vars |
-|----------|-------------|-------------------|
-| `oauth` | Full OAuth 2.1 PKCE flow with RS token => provider token mapping | `OAUTH_CLIENT_ID`, `OAUTH_CLIENT_SECRET`, `OAUTH_SCOPES`, `OAUTH_REDIRECT_URI`, `PROVIDER_CLIENT_ID`, `PROVIDER_CLIENT_SECRET`, `PROVIDER_ACCOUNTS_URL` |
-| `google` | Same as OAuth but with Google preset endpoints | `OAUTH_CLIENT_ID`, `OAUTH_CLIENT_SECRET`, `OAUTH_SCOPES`, `OAUTH_REDIRECT_URI` |
-| `bearer` | Static Bearer token | `BEARER_TOKEN` |
-| `api_key` | Static API key via header (default: `x-api-key`) | `API_KEY`, `API_KEY_HEADER` |
-| `custom` | Arbitrary custom request headers | `CUSTOM_HEADERS` |
-| `none` | No authentication | - |
+| Strategy | Description |
+|----------|-------------|
+| `oauth` | Full OAuth 2.1 PKCE flow with RS token → provider token mapping |
+| `google` | Same as OAuth with Google preset endpoints |
+| `bearer` | Static Bearer token |
+| `api_key` | Static API key via header |
+| `custom` | Arbitrary custom headers |
+| `none` | No authentication |
 
 ### Client Configuration
 
@@ -458,27 +470,7 @@ return fail("spreadsheet_id is required");
 
 ## Configuration
 
-All configuration is read from environment variables / Wrangler bindings.
-
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `TOKENS` | Yes | Cloudflare KV namespace binding for token/session storage |
-| `RS_TOKENS_ENC_KEY` | Yes | Base64url-encoded 32-byte AES-256-GCM encryption key |
-| `AUTH_STRATEGY` | No | `oauth` \| `google` \| `bearer` \| `api_key` \| `custom` \| `none` (inferred if unset) |
-| `OAUTH_CLIENT_ID` | OAuth/Google | OAuth client ID |
-| `OAUTH_CLIENT_SECRET` | OAuth/Google | OAuth client secret |
-| `OAUTH_SCOPES` | OAuth/Google | Space-separated OAuth scopes |
-| `OAUTH_REDIRECT_URI` | OAuth/Google | Redirect URI after authorization |
-| `PROVIDER_ACCOUNTS_URL` | OAuth only | Provider accounts URL (for Google: auto-set to `https://accounts.google.com`) |
-| `PROVIDER_API_URL` | No | Provider API URL |
-| `OAUTH_AUTHORIZATION_URL` | OAuth only | Custom authorization URL (for Google: auto-set to `https://accounts.google.com/o/oauth2/v2/auth`) |
-| `OAUTH_TOKEN_URL` | OAuth only | Custom token URL (for Google: auto-set to `https://oauth2.googleapis.com/token`) |
-| `API_KEY` | api_key only | Static API key value |
-| `API_KEY_HEADER` | api_key only | Header name for API key (default: `x-api-key`) |
-| `BEARER_TOKEN` | bearer only | Static Bearer token value |
-| `CUSTOM_HEADERS` | custom only | JSON-encoded headers object |
-| `BASE_URL` | No | Base URL override (for reverse proxies) |
-| `LOG_LEVEL` | No | `debug` \| `info` \| `warning` \| `error` (default: `info`) |
+See [Configuration Reference](./docs/configuration.md) for detailed environment variables.
 
 ## Contributing
 
