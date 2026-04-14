@@ -2,9 +2,14 @@
 
 A TypeScript library for building [MCP (Model Context Protocol)](https://modelcontextprotocol.io) servers - works on both Cloudflare Workers and Node.js.
 
+<p align="center">
+
 [![npm](https://img.shields.io/npm/v/@phake/mcp?style=flat-square)](https://www.npmjs.com/package/@phake/mcp)
-[![license](https://img.shields.io/npm/l/@phake/mcp?style=flat-square)](LICENSE)
 ![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/fuongz/phake-mcp/publish.yml?style=flat-square)
+![NPM Downloads](https://img.shields.io/npm/dm/%40phake%2Fmcp?style=flat-square&link=https%3A%2F%2Fnpmx.dev%2F%40phake%2Fmcp)
+[![license](https://img.shields.io/npm/l/@phake/mcp?style=flat-square)](LICENSE)
+
+</p>
 
 ---
 
