@@ -261,6 +261,8 @@ export interface McpHandlerDeps<TEnv extends object = object> {
 		TEnv
 	>[];
 	bindings?: TEnv;
+	debug?: boolean;
+	developerMode?: boolean;
 }
 
 /**
@@ -270,7 +272,7 @@ export async function handleMcpRequest<TEnv extends object = object>(
 	request: Request,
 	deps: McpHandlerDeps<TEnv>,
 ): Promise<Response> {
-	const { tokenStore, sessionStore, config } = deps;
+	const { tokenStore, sessionStore, config, debug, developerMode } = deps;
 
 	// Parse JSON-RPC body
 	const body = (await request.json().catch(() => ({}))) as {
@@ -279,6 +281,29 @@ export async function handleMcpRequest<TEnv extends object = object>(
 		params?: Record<string, unknown>;
 		id?: string | number | null;
 	};
+
+	if (debug) {
+		const sensitiveHeaders = new Set([
+			"authorization",
+			"cookie",
+			"x-api-key",
+			"x-auth-token",
+		]);
+		const loggedHeaders: Record<string, string> = {};
+		request.headers.forEach((value, key) => {
+			loggedHeaders[key] =
+				!developerMode && sensitiveHeaders.has(key.toLowerCase())
+					? "[REDACTED]"
+					: value;
+		});
+		logger.debug("mcp_request", {
+			message: "Incoming MCP request",
+			method: request.method,
+			url: request.url,
+			headers: JSON.stringify(loggedHeaders),
+			body: JSON.stringify(body),
+		});
+	}
 
 	const { method, params, id } = body;
 	const messages = getJsonRpcMessages(body);
@@ -442,8 +467,31 @@ export async function handleMcpDelete<TEnv extends object = object>(
 	request: Request,
 	deps: McpHandlerDeps<TEnv>,
 ): Promise<Response> {
-	const { sessionStore } = deps;
+	const { sessionStore, debug, developerMode } = deps;
 	const sessionId = request.headers.get("Mcp-Session-Id")?.trim();
+
+	if (debug) {
+		const sensitiveHeaders = new Set([
+			"authorization",
+			"cookie",
+			"x-api-key",
+			"x-auth-token",
+		]);
+		const loggedHeaders: Record<string, string> = {};
+		request.headers.forEach((value, key) => {
+			loggedHeaders[key] =
+				!developerMode && sensitiveHeaders.has(key.toLowerCase())
+					? "[REDACTED]"
+					: value;
+		});
+		logger.debug("mcp_request", {
+			message: "Incoming MCP DELETE request",
+			method: request.method,
+			url: request.url,
+			headers: JSON.stringify(loggedHeaders),
+			sessionId: sessionId ?? "(none)",
+		});
+	}
 
 	if (!sessionId) {
 		return withCors(

@@ -58,6 +58,8 @@ export interface RouterContext<TEnv extends object = object> {
 		TEnv
 	>[];
 	bindings?: TEnv;
+	debug?: boolean;
+	developerMode?: boolean;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -148,7 +150,7 @@ export function createWorkerRouter<TEnv extends object = object>(
 	fetch: (request: Request) => Promise<Response>;
 } {
 	const router = Router();
-	const { tokenStore, sessionStore, config, tools, bindings } = ctx;
+	const { tokenStore, sessionStore, config, tools, bindings, debug, developerMode } = ctx;
 
 	// CORS preflight
 	router.options("*", () => corsPreflightResponse());
@@ -169,6 +171,8 @@ export function createWorkerRouter<TEnv extends object = object>(
 			config,
 			tools,
 			bindings,
+			debug,
+			developerMode,
 		}),
 	);
 
@@ -179,6 +183,8 @@ export function createWorkerRouter<TEnv extends object = object>(
 			config,
 			tools,
 			bindings,
+			debug,
+			developerMode,
 		}),
 	);
 
