@@ -13,6 +13,7 @@ import {
 	type McpDispatchContext,
 	type McpSessionState,
 } from "../../shared/mcp/dispatcher.js";
+import { GITHUB, GOOGLE } from "../../shared/oauth/constants.js";
 import {
 	ensureFreshToken,
 	type ProviderRefreshConfig,
@@ -140,17 +141,28 @@ function buildStaticAuthHeaders(config: UnifiedConfig): Record<string, string> {
 function buildProviderRefreshConfig(
 	config: UnifiedConfig,
 ): ProviderRefreshConfig | undefined {
+	const isGoogle = config.AUTH_STRATEGY === "google";
+	const isGitHub = config.AUTH_STRATEGY === "github";
+
 	const clientId = config.PROVIDER_CLIENT_ID || config.OAUTH_CLIENT_ID;
 	const clientSecret =
 		config.PROVIDER_CLIENT_SECRET || config.OAUTH_CLIENT_SECRET;
+	const accountsUrl =
+		config.PROVIDER_ACCOUNTS_URL ||
+		(isGoogle ? GOOGLE.ACCOUNTS_URL : undefined) ||
+		(isGitHub ? GITHUB.ACCOUNTS_URL : undefined);
 
-	if (!clientId || !clientSecret || !config.PROVIDER_ACCOUNTS_URL) {
+	if (!clientId || !clientSecret || !accountsUrl) {
 		return undefined;
 	}
 	return {
 		clientId,
 		clientSecret,
-		accountsUrl: config.PROVIDER_ACCOUNTS_URL,
+		accountsUrl,
+		tokenEndpointPath:
+			config.OAUTH_TOKEN_URL ||
+			(isGoogle ? GOOGLE.TOKEN_URL : undefined) ||
+			(isGitHub ? GITHUB.TOKEN_URL : undefined),
 	};
 }
 

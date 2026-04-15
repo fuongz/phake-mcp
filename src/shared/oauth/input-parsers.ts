@@ -1,6 +1,7 @@
 // Shared OAuth input parsing for both Node.js and Cloudflare Workers
 
 import type { UnifiedConfig } from "../config/env.js";
+import { GITHUB, GOOGLE } from "./constants.js";
 import type {
 	AuthorizeInput,
 	OAuthConfig,
@@ -124,14 +125,12 @@ export function buildGoogleProviderConfig(
 	return {
 		clientId: config.PROVIDER_CLIENT_ID || config.OAUTH_CLIENT_ID,
 		clientSecret: config.PROVIDER_CLIENT_SECRET || config.OAUTH_CLIENT_SECRET,
-		accountsUrl: config.PROVIDER_ACCOUNTS_URL || "https://accounts.google.com",
-		oauthScopes: config.OAUTH_SCOPES || "openid email profile",
+		accountsUrl: config.PROVIDER_ACCOUNTS_URL || GOOGLE.ACCOUNTS_URL,
+		oauthScopes: config.OAUTH_SCOPES || GOOGLE.DEFAULT_SCOPES,
 		extraAuthParams: config.OAUTH_EXTRA_AUTH_PARAMS,
 		authorizationEndpointPath:
-			config.OAUTH_AUTHORIZATION_URL ||
-			"https://accounts.google.com/o/oauth2/v2/auth",
-		tokenEndpointPath:
-			config.OAUTH_TOKEN_URL || "https://oauth2.googleapis.com/token",
+			config.OAUTH_AUTHORIZATION_URL || GOOGLE.AUTHORIZATION_URL,
+		tokenEndpointPath: config.OAUTH_TOKEN_URL || GOOGLE.TOKEN_URL,
 	};
 }
 
@@ -145,14 +144,12 @@ export function buildGitHubProviderConfig(
 	return {
 		clientId: config.OAUTH_CLIENT_ID || config.PROVIDER_CLIENT_ID,
 		clientSecret: config.OAUTH_CLIENT_SECRET || config.PROVIDER_CLIENT_SECRET,
-		accountsUrl: config.PROVIDER_ACCOUNTS_URL || "https://github.com",
-		oauthScopes: config.OAUTH_SCOPES || "read:user",
+		accountsUrl: config.PROVIDER_ACCOUNTS_URL || GITHUB.ACCOUNTS_URL,
+		oauthScopes: config.OAUTH_SCOPES || GITHUB.DEFAULT_SCOPES,
 		extraAuthParams: config.OAUTH_EXTRA_AUTH_PARAMS,
 		authorizationEndpointPath:
-			config.OAUTH_AUTHORIZATION_URL ||
-			"https://github.com/login/oauth/authorize",
-		tokenEndpointPath:
-			config.OAUTH_TOKEN_URL || "https://github.com/login/oauth/access_token",
+			config.OAUTH_AUTHORIZATION_URL || GITHUB.AUTHORIZATION_URL,
+		tokenEndpointPath: config.OAUTH_TOKEN_URL || GITHUB.TOKEN_URL,
 	};
 }
 

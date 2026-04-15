@@ -8,6 +8,7 @@
 import * as oauth from "oauth4webapi";
 import type { ProviderTokens, TokenStore } from "../storage/interface.js";
 import { sharedLogger as logger } from "../utils/logger.js";
+import { GITHUB, GOOGLE } from "./constants.js";
 
 /** Provider configuration for token refresh */
 export interface ProviderRefreshConfig {
@@ -38,8 +39,8 @@ export function buildProviderRefreshConfig(config: {
 		config.PROVIDER_CLIENT_SECRET || config.OAUTH_CLIENT_SECRET;
 	const accountsUrl =
 		config.PROVIDER_ACCOUNTS_URL ||
-		(isGoogle ? "https://accounts.google.com" : undefined) ||
-		(isGitHub ? "https://github.com" : undefined);
+		(isGoogle ? GOOGLE.ACCOUNTS_URL : undefined) ||
+		(isGitHub ? GITHUB.ACCOUNTS_URL : undefined);
 
 	if (!clientId || !clientSecret || !accountsUrl) {
 		return undefined;
@@ -51,8 +52,8 @@ export function buildProviderRefreshConfig(config: {
 		accountsUrl,
 		tokenEndpointPath:
 			config.OAUTH_TOKEN_URL ||
-			(isGoogle ? "https://oauth2.googleapis.com/token" : undefined) ||
-			(isGitHub ? "https://github.com/login/oauth/access_token" : undefined),
+			(isGoogle ? GOOGLE.TOKEN_URL : undefined) ||
+			(isGitHub ? GITHUB.TOKEN_URL : undefined),
 	};
 }
 
